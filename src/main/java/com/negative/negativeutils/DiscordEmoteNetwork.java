@@ -19,7 +19,7 @@ public final class DiscordEmoteNetwork {
     private static final SimpleChannel CHANNEL =
             NetworkRegistry.newSimpleChannel(
                     ResourceLocation.fromNamespaceAndPath(
-                            EnciclopediaMod.MOD_ID,
+                            "negativeutils",
                             "discord_emotes"
                     ),
                     () -> PROTOCOL,
