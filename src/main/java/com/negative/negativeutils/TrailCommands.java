@@ -1,6 +1,7 @@
 package com.negative.negativeutils;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -11,87 +12,202 @@ import net.minecraftforge.fml.common.Mod;
         modid = "negativeutils",
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
-public class TrailCommands {
+public final class TrailCommands {
+    private TrailCommands() {
+    }
 
     @SubscribeEvent
-    public static void onRegisterCommands(RegisterCommandsEvent event) {
+    public static void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("trail")
+                Commands.literal("negativeutils")
                         .requires(source -> source.hasPermission(2))
-                        .executes(context -> {
-                            TrailNetwork.openSettings(
-                                    context.getSource().getPlayerOrException()
-                            );
-                            return 1;
-                        })
-                        .then(Commands.literal("color")
-                                .then(Commands.argument(
-                                                "rojo",
-                                                IntegerArgumentType.integer(0, 255)
-                                        )
+                        .then(Commands.literal("senderos")
+                                .then(Commands.literal("crear")
                                         .then(Commands.argument(
-                                                        "verde",
-                                                        IntegerArgumentType.integer(0, 255)
-                                                )
-                                                .then(Commands.argument(
-                                                                "azul",
-                                                                IntegerArgumentType.integer(0, 255)
+                                                "nombre",
+                                                StringArgumentType.string()
+                                        ).executes(context -> {
+                                            String name = StringArgumentType.getString(
+                                                    context, "nombre"
+                                            );
+                                            TrailSavedData data = TrailSavedData.get(
+                                                    context.getSource().getServer()
+                                            );
+                                            if (data.nameExists(name)) {
+                                                context.getSource().sendFailure(
+                                                        Component.literal(
+                                                                "Ya existe un sendero con ese nombre."
                                                         )
-                                                        .then(Commands.argument(
-                                                                        "opacidad",
-                                                                        IntegerArgumentType.integer(0, 255)
-                                                                )
-                                                                .executes(context -> {
-                                                                    int red = IntegerArgumentType.getInteger(
-                                                                            context,
-                                                                            "rojo"
-                                                                    );
-                                                                    int green = IntegerArgumentType.getInteger(
-                                                                            context,
-                                                                            "verde"
-                                                                    );
-                                                                    int blue = IntegerArgumentType.getInteger(
-                                                                            context,
-                                                                            "azul"
-                                                                    );
-                                                                    int alpha = IntegerArgumentType.getInteger(
-                                                                            context,
-                                                                            "opacidad"
-                                                                    );
+                                                );
+                                                return 0;
+                                            }
 
-                                                                    TrailSavedData data =
-                                                                            TrailSavedData.get(
-                                                                                    context.getSource()
-                                                                                            .getServer()
-                                                                            );
+                                            TrailSavedData.Trail trail = data.create(name);
+                                            if (trail == null) {
+                                                return 0;
+                                            }
 
-                                                                    TrailNetwork.setColor(
-                                                                            data.getPoints(),
-                                                                            red,
-                                                                            green,
-                                                                            blue,
-                                                                            alpha
-                                                                    );
-
-                                                                    context.getSource().sendSuccess(
-                                                                            () -> Component.literal(
-                                                                                    "Color de la guía actualizado: "
-                                                                                            + red + ", "
-                                                                                            + green + ", "
-                                                                                            + blue
-                                                                                            + " | opacidad: "
-                                                                                            + alpha
-                                                                            ),
-                                                                            true
-                                                                    );
-
-                                                                    return 1;
-                                                                })
+                                            ServerPlayer player =
+                                                    context.getSource().getPlayerOrException();
+                                            TrailSelectionState.select(
+                                                    player.getUUID(),
+                                                    trail.id()
+                                            );
+                                            TrailNetwork.syncAll(data.getTrails());
+                                            context.getSource().sendSuccess(
+                                                    () -> Component.literal(
+                                                            "Sendero '" + trail.name()
+                                                                    + "' creado y seleccionado."
+                                                    ),
+                                                    true
+                                            );
+                                            return Command.SINGLE_SUCCESS;
+                                        })
+                                ))
+                                .then(Commands.literal("select")
+                                        .then(Commands.argument(
+                                                "nombre",
+                                                StringArgumentType.string()
+                                        ).executes(context -> {
+                                            String name = StringArgumentType.getString(
+                                                    context, "nombre"
+                                            );
+                                            TrailSavedData data = TrailSavedData.get(
+                                                    context.getSource().getServer()
+                                            );
+                                            TrailSavedData.Trail trail = data.getByName(name);
+                                            if (trail == null) {
+                                                context.getSource().sendFailure(
+                                                        Component.literal(
+                                                                "No existe ese sendero."
                                                         )
-                                                )
-                                        )
+                                                );
+                                                return 0;
+                                            }
+
+                                            ServerPlayer player =
+                                                    context.getSource().getPlayerOrException();
+                                            TrailSelectionState.select(
+                                                    player.getUUID(),
+                                                    trail.id()
+                                            );
+                                            TrailNetwork.openSettings(player, trail);
+                                            return Command.SINGLE_SUCCESS;
+                                        })
+                                ))
+                                .then(Commands.literal("mostrar")
+                                        .then(Commands.argument(
+                                                "nombre",
+                                                StringArgumentType.string()
+                                        ).executes(context ->
+                                                setVisible(context, true)
+                                        ))
+                                )
+                                .then(Commands.literal("ocultar")
+                                        .then(Commands.argument(
+                                                "nombre",
+                                                StringArgumentType.string()
+                                        ).executes(context ->
+                                                setVisible(context, false)
+                                        ))
+                                )
+                                .then(Commands.literal("eliminar")
+                                        .then(Commands.argument(
+                                                "nombre",
+                                                StringArgumentType.string()
+                                        ).executes(context ->
+                                                remove(context)
+                                        ))
+                                )
+                                .then(Commands.literal("lista")
+                                        .executes(context -> list(context)))
+                                .then(Commands.literal("deseleccionar")
+                                        .executes(context -> {
+                                            ServerPlayer player =
+                                                    context.getSource().getPlayerOrException();
+                                            TrailSelectionState.clear(player.getUUID());
+                                            context.getSource().sendSuccess(
+                                                    () -> Component.literal(
+                                                            "Sendero deseleccionado."
+                                                    ),
+                                                    false
+                                            );
+                                            return Command.SINGLE_SUCCESS;
+                                        })
                                 )
                         )
         );
+    }
+
+    private static int setVisible(
+            com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> context,
+            boolean visible
+    ) {
+        String name = StringArgumentType.getString(context, "nombre");
+        TrailSavedData data = TrailSavedData.get(context.getSource().getServer());
+        TrailSavedData.Trail trail = data.getByName(name);
+        if (trail == null) {
+            context.getSource().sendFailure(Component.literal("No existe ese sendero."));
+            return 0;
+        }
+
+        data.setVisible(trail.id(), visible);
+        TrailNetwork.syncAll(data.getTrails());
+        context.getSource().sendSuccess(
+                () -> Component.literal(
+                        visible
+                                ? "Sendero '" + trail.name() + "' visible."
+                                : "Sendero '" + trail.name() + "' oculto."
+                ),
+                true
+        );
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int remove(
+            com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> context
+    ) {
+        String name = StringArgumentType.getString(context, "nombre");
+        TrailSavedData data = TrailSavedData.get(context.getSource().getServer());
+        TrailSavedData.Trail trail = data.getByName(name);
+        if (trail == null) {
+            context.getSource().sendFailure(Component.literal("No existe ese sendero."));
+            return 0;
+        }
+
+        data.remove(trail.id());
+        TrailNetwork.syncAll(data.getTrails());
+        context.getSource().sendSuccess(
+                () -> Component.literal(
+                        "Sendero '" + trail.name() + "' eliminado."
+                ),
+                true
+        );
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int list(
+            com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> context
+    ) {
+        TrailSavedData data = TrailSavedData.get(context.getSource().getServer());
+        if (data.getTrails().isEmpty()) {
+            context.getSource().sendSuccess(
+                    () -> Component.literal("No hay senderos creados."),
+                    false
+            );
+            return Command.SINGLE_SUCCESS;
+        }
+
+        for (TrailSavedData.Trail trail : data.getTrails()) {
+            context.getSource().sendSuccess(
+                    () -> Component.literal(
+                            trail.name() + " | "
+                                    + (trail.visible() ? "visible" : "oculto")
+                                    + " | puntos: " + trail.points().size()
+                    ),
+                    false
+            );
+        }
+        return Command.SINGLE_SUCCESS;
     }
 }
