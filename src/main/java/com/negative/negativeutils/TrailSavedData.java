@@ -338,6 +338,10 @@ public class TrailSavedData extends SavedData {
             return opacity;
         }
 
+        void pointsInternalAdd(TrailPoint point) {
+            points.add(point);
+        }
+
         public List<TrailPoint> points() {
             return List.copyOf(points);
         }
