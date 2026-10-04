@@ -73,7 +73,7 @@ El mod incorpora un sistema de cuenta regresiva para eventos.
 El panel se abre con:
 
 ```text
-/negativeutils cuenta
+/negativeutils contador
 ```
 
 Solo los operadores pueden utilizarlo.
