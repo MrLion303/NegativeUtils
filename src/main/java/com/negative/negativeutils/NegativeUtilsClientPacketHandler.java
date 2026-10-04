@@ -35,10 +35,10 @@ final class NegativeUtilsClientPacketHandler {
         }
     }
 
-    static void openWaypointEditor(java.util.UUID id, String name, String dimension,
-                                   double x, double y, double z, int color, String icon) {
+    static void openWaypointEditor(java.util.UUID id, String commandId, String name, String dimension,
+                                   double x, double y, double z, int color, String icon, String corner) {
         Minecraft.getInstance().setScreen(
-                new WaypointScreen(id, name, dimension, x, y, z, color, icon)
+                new WaypointScreen(id, commandId, name, dimension, x, y, z, color, icon, corner)
         );
     }
 

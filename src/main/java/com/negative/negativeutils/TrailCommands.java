@@ -166,6 +166,35 @@ public final class TrailCommands {
                                                 remove(context)
                                         ))
                                 )
+                                .then(Commands.literal("color")
+                                        .then(Commands.argument("nombre", StringArgumentType.string())
+                                                .suggests((context, builder) ->
+                                                        SharedSuggestionProvider.suggest(
+                                                                TrailSavedData.get(context.getSource().getServer())
+                                                                        .getTrails().stream()
+                                                                        .map(TrailSavedData.Trail::name).toList(), builder))
+                                                .then(Commands.argument("hex", StringArgumentType.word())
+                                                        .executes(context -> {
+                                                            String name = StringArgumentType.getString(context, "nombre");
+                                                            String hex = StringArgumentType.getString(context, "hex").replace("#", "");
+                                                            if (hex.length() != 6 || !hex.chars().allMatch(ch -> Character.digit(ch, 16) >= 0)) {
+                                                                context.getSource().sendFailure(Component.literal("Usa un color hexadecimal de 6 dígitos, por ejemplo FF8800."));
+                                                                return 0;
+                                                            }
+                                                            TrailSavedData data = TrailSavedData.get(context.getSource().getServer());
+                                                            TrailSavedData.Trail trail = data.getByName(name);
+                                                            if (trail == null) {
+                                                                context.getSource().sendFailure(Component.literal("No existe ese sendero."));
+                                                                return 0;
+                                                            }
+                                                            int color = Integer.parseInt(hex, 16);
+                                                            data.setSettings(trail.id(), (color >> 16) & 255, (color >> 8) & 255,
+                                                                    color & 255, trail.opacity());
+                                                            TrailNetwork.syncAll(data.getTrails());
+                                                            context.getSource().sendSuccess(() -> Component.literal(
+                                                                    "Color del sendero '" + trail.name() + "' actualizado a #" + hex.toUpperCase(java.util.Locale.ROOT) + "."), true);
+                                                            return Command.SINGLE_SUCCESS;
+                                                        })))
                                 .then(Commands.literal("lista")
                                         .executes(context -> list(context)))
                                 .then(Commands.literal("deseleccionar")

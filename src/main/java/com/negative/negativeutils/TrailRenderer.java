@@ -126,6 +126,13 @@ public final class TrailRenderer {
         drawGlyph(poseStack, buffers, font, "•", -2.5F, -3.0F, color);
         drawGlyph(poseStack, buffers, font, "•", 0.0F, -4.0F, color);
         drawGlyph(poseStack, buffers, font, "•", 2.5F, -3.0F, color);
+
+        // Dibuja la cara opuesta para que las huellas se vean desde arriba y desde abajo.
+        poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
+        drawGlyph(poseStack, buffers, font, "●", 0.0F, 1.0F, color);
+        drawGlyph(poseStack, buffers, font, "•", -2.5F, -3.0F, color);
+        drawGlyph(poseStack, buffers, font, "•", 0.0F, -4.0F, color);
+        drawGlyph(poseStack, buffers, font, "•", 2.5F, -3.0F, color);
         poseStack.popPose();
     }
 

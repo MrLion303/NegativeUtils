@@ -24,7 +24,6 @@ import java.util.List;
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class WaypointRenderer {
-    private static final double MAX_RENDER_DISTANCE = 512.0;
     private static final float MARKER_SCALE = 0.05F;
     private static final float LABEL_SCALE = 0.02F;
 
@@ -33,92 +32,51 @@ public final class WaypointRenderer {
 
     @SubscribeEvent
     public static void onRenderHud(RenderGuiOverlayEvent.Post event) {
-        if (event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) {
-            return;
-        }
-
+        if (event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) {
-            return;
-        }
+        if (minecraft.level == null || minecraft.player == null) return;
 
         String dimension = minecraft.level.dimension().location().toString();
-        List<WaypointSavedData.Waypoint> waypoints =
-                WaypointClientData.getWaypoints().stream()
-                        .filter(WaypointSavedData.Waypoint::visible)
-                        .filter(waypoint -> waypoint.dimension().equals(dimension))
-                        .sorted(Comparator.comparingDouble(waypoint ->
-                                minecraft.player.position().distanceToSqr(
-                                        new Vec3(
-                                                waypoint.x(),
-                                                waypoint.y(),
-                                                waypoint.z()
-                                        )
-                                )))
-                        .toList();
-
-        if (waypoints.isEmpty()) {
-            return;
-        }
+        List<WaypointSavedData.Waypoint> waypoints = WaypointClientData.getWaypoints().stream()
+                .filter(WaypointSavedData.Waypoint::visible)
+                .filter(waypoint -> waypoint.dimension().equals(dimension))
+                .sorted(Comparator.comparingDouble(waypoint -> minecraft.player.position().distanceToSqr(
+                        new Vec3(waypoint.x(), waypoint.y(), waypoint.z()))))
+                .toList();
+        if (waypoints.isEmpty()) return;
 
         GuiGraphics graphics = event.getGuiGraphics();
         Font font = minecraft.font;
-        int x = 8;
-        int y = 8;
-        int shown = Math.min(waypoints.size(), 8);
-
+        int margin = 8;
+        int[] rows = new int[4];
+        int shown = Math.min(waypoints.size(), 32);
         for (int index = 0; index < shown; index++) {
             WaypointSavedData.Waypoint waypoint = waypoints.get(index);
             double distance = minecraft.player.position().distanceTo(
-                    new Vec3(waypoint.x(), waypoint.y(), waypoint.z())
-            );
+                    new Vec3(waypoint.x(), waypoint.y(), waypoint.z()));
             String distanceLabel = Math.round(distance) + " m";
-            int rowWidth = Math.max(
-                    font.width(waypoint.name()),
-                    font.width(distanceLabel)
-            ) + 18;
-
-            graphics.fill(
-                    x - 3,
-                    y - 2,
-                    x + rowWidth,
-                    y + 34,
-                    0x90000000
-            );
-
-            if (!waypoint.name().isBlank()) {
-                graphics.drawString(
-                        font,
-                        waypoint.name(),
-                        x,
-                        y,
-                        0xFFFFFFFF,
-                        true
-                );
-            }
-
+            int rowWidth = Math.max(font.width(waypoint.name()), font.width(distanceLabel)) + 25;
+            int corner = switch (waypoint.corner()) {
+                case "TOP_RIGHT" -> 1;
+                case "BOTTOM_LEFT" -> 2;
+                case "BOTTOM_RIGHT" -> 3;
+                default -> 0;
+            };
+            int row = rows[corner]++;
+            boolean right = corner == 1 || corner == 3;
+            boolean bottom = corner == 2 || corner == 3;
+            int x = right ? graphics.guiWidth() - margin - rowWidth : margin;
+            int y = bottom ? graphics.guiHeight() - margin - 34 - row * 36 : margin + row * 36;
+            graphics.fill(x - 3, y - 2, x + rowWidth, y + 34, 0x90000000);
             graphics.drawString(font, waypoint.icon(), x, y + 11, 0xFF000000 | waypoint.color(), true);
-
-            graphics.drawString(
-                    font,
-                    distanceLabel,
-                    x,
-                    y + 22,
-                    0xFFFFFFFF,
-                    true
-            );
-            y += 36;
+            if (!waypoint.name().isBlank()) {
+                graphics.drawString(font, waypoint.name(), x + 13, y, 0xFFFFFFFF, true);
+            }
+            graphics.drawString(font, distanceLabel, x + 13, y + 22, 0xFFFFFFFF, true);
         }
-
         if (waypoints.size() > shown) {
-            graphics.drawString(
-                    font,
-                    "+" + (waypoints.size() - shown) + " waypoints",
-                    x + 12,
-                    y,
-                    0xFFCCCCCC,
-                    true
-            );
+            graphics.drawString(font, "+" + (waypoints.size() - shown) + " waypoints",
+                    margin, margin + 36 * 8, 0xFFCCCCCC, true);
         }
     }
 
@@ -166,11 +124,10 @@ public final class WaypointRenderer {
             );
             double distance = minecraft.player.position().distanceTo(anchor);
 
-            if (distance > MAX_RENDER_DISTANCE) {
-                continue;
-            }
-
             float yaw = horizontalFacingYaw(anchor, camera);
+            float distanceScale = (float) Math.max(1.0, distance / 8.0);
+            float markerScale = MARKER_SCALE * distanceScale;
+            float labelScale = LABEL_SCALE * distanceScale;
             int color = 0xFF000000 | waypoint.color();
 
             drawVerticalText(
@@ -182,10 +139,10 @@ public final class WaypointRenderer {
                     anchor.z,
                     yaw,
                     waypoint.icon(),
-                    MARKER_SCALE,
+                    markerScale,
                     color,
                     Font.DisplayMode.NORMAL,
-                    0
+                    0x55000000
             );
 
             if (!waypoint.name().isBlank()) {
@@ -198,10 +155,10 @@ public final class WaypointRenderer {
                         anchor.z,
                         yaw,
                         waypoint.name(),
-                        LABEL_SCALE,
+                        labelScale,
                         0xFFFFFFFF,
                         Font.DisplayMode.NORMAL,
-                        0
+                        0x65000000
                 );
             }
 

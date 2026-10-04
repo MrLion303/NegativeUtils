@@ -32,6 +32,7 @@ public class AdminPanelScreen extends Screen {
     private int selectedWheelColor = 0xFFFFFF;
     private int wheelDraftColor = 0xFFFFFF;
     private boolean colorPickerOpen;
+    private boolean monterreyTime;
 
     public AdminPanelScreen() {
         super(Component.literal("Panel de contadores"));
@@ -70,15 +71,15 @@ public class AdminPanelScreen extends Screen {
         int dateWidth = 43;
         int dateGap = 4;
         int dateStart = right + 1;
-        dayInput = numberField(dateStart, 56, dateWidth, 2);
-        monthInput = numberField(dateStart + dateWidth + dateGap, 56, dateWidth, 2);
-        yearInput = numberField(dateStart + (dateWidth + dateGap) * 2, 56, dateWidth + 7, 4);
-        hourInput = numberField(dateStart, 85, dateWidth, 2);
-        minuteInput = numberField(dateStart + dateWidth + dateGap, 85, dateWidth, 2);
-        secondInput = numberField(dateStart + (dateWidth + dateGap) * 2, 85, dateWidth + 7, 2);
+        dayInput = numberField(dateStart, 52, dateWidth, 2);
+        monthInput = numberField(dateStart + dateWidth + dateGap, 52, dateWidth, 2);
+        yearInput = numberField(dateStart + (dateWidth + dateGap) * 2, 52, dateWidth + 7, 4);
+        hourInput = numberField(dateStart, 76, dateWidth, 2);
+        minuteInput = numberField(dateStart + dateWidth + dateGap, 76, dateWidth, 2);
+        secondInput = numberField(dateStart + (dateWidth + dateGap) * 2, 76, dateWidth + 7, 2);
 
-        displayTextInput = field(right, 114, 155, "Texto debajo del contador", 100);
-        colorInput = field(right, 143, 88, "Color HEX", 6);
+        displayTextInput = field(right, 100, 155, "Texto debajo del contador", 100);
+        colorInput = field(right, 124, 88, "Color HEX", 6);
         colorInput.setValue("FFFFFF");
         colorInput.setFilter(text -> text.length() <= 6
                 && text.chars().allMatch(character -> Character.digit(character, 16) >= 0));
@@ -94,11 +95,18 @@ public class AdminPanelScreen extends Screen {
         addRenderableWidget(colorInput);
 
         addRenderableWidget(Button.builder(Component.literal("Elegir color"), button -> openColorPicker())
-                .bounds(right + 92, 143, 63, 20).build());
+                .bounds(right + 92, 124, 63, 20).build());
+        addRenderableWidget(Button.builder(Component.literal(monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"), button -> {
+            long target = readTargetMillis();
+            monterreyTime = !monterreyTime;
+            setDateFields(target);
+            button.setMessage(Component.literal(monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"));
+        }).bounds(right, 170, 155, 20).build());
+
         addRenderableWidget(Button.builder(Component.literal(POSITION_LABELS[selectedPosition]), button -> {
             selectedPosition = (selectedPosition + 1) % POSITIONS.length;
             button.setMessage(Component.literal(POSITION_LABELS[selectedPosition]));
-        }).bounds(right, 166, 155, 20).build());
+        }).bounds(right, 147, 155, 20).build());
 
         int actionY = height - 49;
         addRenderableWidget(Button.builder(Component.literal("Guardar"), button -> saveCountdown())
@@ -133,13 +141,14 @@ public class AdminPanelScreen extends Screen {
     }
 
     private void setDateFields(long epochMillis) {
-        LocalDateTime utc = LocalDateTime.ofEpochSecond(epochMillis / 1000L, 0, ZoneOffset.UTC);
-        dayInput.setValue(String.format(Locale.ROOT, "%02d", utc.getDayOfMonth()));
-        monthInput.setValue(String.format(Locale.ROOT, "%02d", utc.getMonthValue()));
-        yearInput.setValue(String.format(Locale.ROOT, "%04d", utc.getYear()));
-        hourInput.setValue(String.format(Locale.ROOT, "%02d", utc.getHour()));
-        minuteInput.setValue(String.format(Locale.ROOT, "%02d", utc.getMinute()));
-        secondInput.setValue(String.format(Locale.ROOT, "%02d", utc.getSecond()));
+        ZoneOffset offset = monterreyTime ? ZoneOffset.ofHours(-6) : ZoneOffset.UTC;
+        LocalDateTime local = LocalDateTime.ofEpochSecond(epochMillis / 1000L, 0, offset);
+        dayInput.setValue(String.format(Locale.ROOT, "%02d", local.getDayOfMonth()));
+        monthInput.setValue(String.format(Locale.ROOT, "%02d", local.getMonthValue()));
+        yearInput.setValue(String.format(Locale.ROOT, "%04d", local.getYear()));
+        hourInput.setValue(String.format(Locale.ROOT, "%02d", local.getHour()));
+        minuteInput.setValue(String.format(Locale.ROOT, "%02d", local.getMinute()));
+        secondInput.setValue(String.format(Locale.ROOT, "%02d", local.getSecond()));
     }
 
     private void clearEditor() {
@@ -168,6 +177,22 @@ public class AdminPanelScreen extends Screen {
         }
     }
 
+    private long readTargetMillis() {
+        try {
+            ZoneOffset offset = monterreyTime ? ZoneOffset.ofHours(-6) : ZoneOffset.UTC;
+            LocalDateTime local = LocalDateTime.of(
+                    Integer.parseInt(yearInput.getValue()),
+                    Integer.parseInt(monthInput.getValue()),
+                    Integer.parseInt(dayInput.getValue()),
+                    Integer.parseInt(hourInput.getValue()),
+                    Integer.parseInt(minuteInput.getValue()),
+                    Integer.parseInt(secondInput.getValue()));
+            return local.toInstant(offset).toEpochMilli();
+        } catch (Exception exception) {
+            return System.currentTimeMillis() + 3_600_000L;
+        }
+    }
+
     private void saveCountdown() {
         if (nameInput.getValue().trim().isEmpty()) {
             setStatus("Escribe un nombre para el contador.", 0xFFFF5555);
@@ -177,23 +202,16 @@ public class AdminPanelScreen extends Screen {
         final long targetMillis;
         final int color;
         try {
-            LocalDateTime utc = LocalDateTime.of(
-                    Integer.parseInt(yearInput.getValue()),
-                    Integer.parseInt(monthInput.getValue()),
-                    Integer.parseInt(dayInput.getValue()),
-                    Integer.parseInt(hourInput.getValue()),
-                    Integer.parseInt(minuteInput.getValue()),
-                    Integer.parseInt(secondInput.getValue()));
-            targetMillis = utc.toInstant(ZoneOffset.UTC).toEpochMilli();
+            targetMillis = readTargetMillis();
             color = Integer.parseInt(colorInput.getValue().trim(), 16);
         } catch (NumberFormatException | DateTimeException exception) {
-            setStatus("Introduce una fecha UTC y un color hexadecimal válidos.", 0xFFFF5555);
+            setStatus("Introduce una fecha y un color hexadecimal válidos.", 0xFFFF5555);
             return;
         }
 
         long remainingMillis = targetMillis - System.currentTimeMillis();
         if (remainingMillis <= 0) {
-            setStatus("La fecha y hora UTC deben ser futuras.", 0xFFFF5555);
+            setStatus("La fecha y hora deben ser futuras.", 0xFFFF5555);
             return;
         }
         if (colorInput.getValue().trim().length() != 6) {
@@ -209,7 +227,7 @@ public class AdminPanelScreen extends Screen {
                 displayTextInput.getValue(),
                 color & 0xFFFFFF,
                 POSITIONS[selectedPosition]);
-        setStatus("Contador guardado. La fecha se interpreta en UTC.", 0xFF55FF55);
+        setStatus("Contador guardado. Zona: " + (monterreyTime ? "Monterrey (UTC-6)." : "UTC."), 0xFF55FF55);
     }
 
     private void toggleCountdown() {
@@ -301,7 +319,7 @@ public class AdminPanelScreen extends Screen {
         int centerY = WHEEL_CENTER_Y;
         int panelLeft = centerX - WHEEL_RADIUS - 22;
         int panelRight = centerX + WHEEL_RADIUS + 22;
-        graphics.fill(0, 0, width, height, 0xA0000000);
+        graphics.fill(0, 0, width, height, 0xFF101318);
         graphics.fill(panelLeft - 2, 10, panelRight + 2, 230, 0xFF7A7A7A);
         graphics.fill(panelLeft, 12, panelRight, 228, 0xFF20242A);
         graphics.drawCenteredString(font, "Elige un color", centerX, 24, 0xFFFFFFFF);
@@ -351,10 +369,10 @@ public class AdminPanelScreen extends Screen {
         int right = width / 2 + 15;
         graphics.drawString(font, "Contadores", left, 22, 0xFFFFFF);
         graphics.drawString(font, "Editor", right, 21, 0xFFFFFF);
-        graphics.drawString(font, "Fecha UTC: día / mes / año", right, 47, 0xFFFFFF);
-        graphics.drawString(font, "Hora UTC: h / min / seg", right, 76, 0xFFFFFF);
-        graphics.drawString(font, "Texto debajo del contador", right, 105, 0xFFFFFF);
-        graphics.drawString(font, "Color", right, 134, 0xFFFFFF);
+        graphics.drawString(font, "Fecha " + (monterreyTime ? "Monterrey UTC-6" : "UTC") + ": día / mes / año", right, 43, 0xFFFFFF);
+        graphics.drawString(font, "Hora " + (monterreyTime ? "Monterrey UTC-6" : "UTC") + ": h / min / seg", right, 67, 0xFFFFFF);
+        graphics.drawString(font, "Texto debajo del contador", right, 91, 0xFFFFFF);
+        graphics.drawString(font, "Color", right, 115, 0xFFFFFF);
 
         if (colorPickerOpen) renderColorWheel(graphics);
     }
