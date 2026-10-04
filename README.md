@@ -1,80 +1,202 @@
 # NegativeUtils
 
-**NegativeUtils** es un mod de utilidades para Minecraft 1.20.1 desarrollado para complementar servidores y proyectos de **Negative Studios** con herramientas de administración, organización, eventos y personalización.
+**NegativeUtils** es un mod de utilidades para **Minecraft 1.20.1 con Forge**, pensado principalmente para servidores, eventos, mapas personalizados y proyectos de **Negative Studios**.
 
-El objetivo del mod es reunir en un solo lugar distintas funciones que normalmente requerirían varios mods pequeños o sistemas independientes, manteniendo una integración sencilla entre el servidor y los jugadores.
+El mod reúne herramientas de administración, creación de recorridos, puntos de referencia, automatización mediante redstone, cuentas regresivas y funciones relacionadas con Discord.
 
 ## Características
 
-### Sistema de jugadores y administración
-- Panel de administración para gestionar diferentes funciones del servidor.
-- Comandos y herramientas orientadas a la administración.
-- Sistema de descubrimiento de jugadores y seguimiento de información relacionada.
-- Sistema de activación y desactivación de funciones mediante opciones de configuración.
-
 ### Waypoints
-Permite gestionar puntos de interés dentro del mundo mediante un sistema propio de waypoints.
 
-Incluye:
-- Creación y gestión de puntos.
-- Datos guardados en el servidor.
-- Interfaz para consultar y administrar los waypoints.
-- Sincronización entre servidor y cliente.
-- Eventos relacionados con la entrada de jugadores.
+Permite crear puntos de referencia personalizados dentro del mundo.
+
+Con la **Varita de Waypoints**:
+
+- Clic derecho sobre un bloque: crea un waypoint y abre su configuración.
+- Puedes asignarle nombre y color.
+- Clic izquierdo sobre un waypoint: lo elimina.
+- Los waypoints se guardan en el servidor y se sincronizan con los jugadores.
+- Cada waypoint puede mostrarse u ocultarse individualmente.
+
+Comandos:
+
+```text
+/negativeutils waypoints lista
+/negativeutils waypoints mostrar "<nombre>"
+/negativeutils waypoints ocultar "<nombre>"
+/negativeutils waypoints clear
+```
 
 ### Senderos
-Incluye un sistema de senderos que permite trabajar con recorridos o caminos personalizados dentro del servidor.
 
-Cuenta con almacenamiento de datos, interfaz propia y herramientas para su creación o gestión.
+El sistema de senderos permite crear recorridos formados por puntos consecutivos, siguiendo el funcionamiento de una polilínea.
+
+Primero puedes crear un sendero:
+
+```text
+/negativeutils senderos crear "<nombre>"
+```
+
+Después utiliza la **Varita de Senderos**:
+
+- Clic izquierdo: marca o reinicia el punto A.
+- Clic derecho: añade B, C, D y los siguientes puntos.
+- Si no hay un sendero seleccionado, el primer clic izquierdo crea automáticamente uno con un nombre disponible.
+
+Los senderos son independientes entre sí y pueden mostrarse u ocultarse individualmente.
+
+Comandos principales:
+
+```text
+/negativeutils senderos crear "<nombre>"
+/negativeutils senderos select "<nombre>"
+/negativeutils senderos mostrar "<nombre>"
+/negativeutils senderos ocultar "<nombre>"
+/negativeutils senderos eliminar "<nombre>"
+/negativeutils senderos lista
+/negativeutils senderos deseleccionar
+```
+
+El comando `select` selecciona el sendero y abre su pantalla de configuración.
+
+Desde la pantalla puedes personalizar:
+
+- Color.
+- Opacidad.
+
+Cada sendero conserva su propia configuración y sus propios puntos.
 
 ### Cuenta regresiva
-El mod incorpora un sistema de cuenta regresiva sincronizado entre servidor y jugadores.
 
-Incluye:
-- Datos persistentes.
-- Sincronización mediante red.
-- Visualización mediante HUD.
-- Gestión de eventos desde el servidor.
+El mod incorpora un sistema de cuenta regresiva para eventos.
 
-### Secuencias de comandos
-NegativeUtils cuenta con bloques y sistemas destinados a ejecutar secuencias de comandos dentro del mundo.
+El panel se abre con:
 
-Esto permite crear acciones encadenadas para eventos, mapas y sistemas personalizados sin depender de múltiples mecanismos externos.
+```text
+/negativeutils cuenta
+```
 
-### Comandos y herramientas adicionales
-El mod incluye diferentes herramientas internas para servidores y eventos, entre ellas:
-- Comandos personalizados.
-- Retrasos y temporizadores para acciones.
-- Herramientas relacionadas con el respawn.
-- Sistemas de mensajes y avisos.
-- Funciones experimentales y utilidades para eventos.
+Solo los operadores pueden utilizarlo.
+
+Permite establecer:
+
+- Fecha final.
+- Hora exacta.
+- Texto.
+- Color.
+- Posición.
+
+La cuenta puede mostrarse como:
+
+- Bossbar.
+- Actionbar.
+- Scoreboard.
+- Title.
+
+La cuenta utiliza una **fecha y hora final absoluta**, por lo que el tiempo continúa transcurriendo aunque el servidor permanezca apagado. Al volver a encenderlo, el mod calcula el tiempo restante usando la hora actual.
+
+### Bloque de tiempo
+
+Permite retrasar una señal de redstone.
+
+Configuración:
+
+- Coloca el bloque.
+- Haz clic derecho.
+- Define el tiempo de espera.
+- Conecta una señal de redstone.
+
+Cuando recibe una activación, espera el tiempo configurado y genera el pulso de salida.
+
+El rango permite establecer desde 1 segundo hasta 24 horas.
+
+### Bloque de secuencias
+
+Permite ejecutar una secuencia de comandos mediante redstone.
+
+Ejemplo:
+
+```text
+say Comienza el evento
+wait 5
+say Han pasado cinco segundos
+```
+
+Las líneas de comandos se ejecutan en orden y `wait` permite introducir pausas entre ellas.
+
+Esto resulta útil para:
+
+- Eventos.
+- Cinemáticas.
+- Mapas personalizados.
+- Mensajes automáticos.
+- Teletransportes.
+- Activación de mecanismos.
 
 ### Emotes de Discord
-Incluye soporte para trabajar con emotes provenientes de Discord dentro del entorno del servidor.
 
-### Datos persistentes y sincronización
-Gran parte de los sistemas utiliza almacenamiento propio para conservar la información incluso después de reiniciar el mundo o el servidor.
+NegativeUtils incluye un sistema para utilizar emotes de Discord dentro del chat de Minecraft.
 
-La comunicación entre cliente y servidor se realiza mediante una capa de red propia, permitiendo que las interfaces y herramientas mantengan sus datos sincronizados.
+Comandos:
+
+```text
+/negativeutils discord token
+/negativeutils discord sync
+/negativeutils discord status
+```
+
+### Varita de Respawn
+
+La **Varita de Respawn** permite enviar a un jugador a su punto de reaparición.
+
+- Haz clic derecho sobre otro jugador.
+- El mod busca su punto de reaparición.
+- Si existe, lo transporta allí.
+- Si no existe, utiliza el spawn principal del Overworld.
+- Se genera un efecto de humo durante el transporte.
+
+Visualmente utiliza la textura original del **palo de Minecraft**, pero mantiene un brillo de objeto encantado.
+
+### `/yo`
+
+El comando se mantiene como acceso rápido a una ubicación guardada.
+
+```text
+/yo
+```
+
+La ubicación se configura mediante:
+
+```text
+/momento set ubicacion <coordenadas>
+```
+
+La posición y dimensión se guardan en los datos persistentes del servidor.
+
+### Persistencia y multijugador
+
+Los sistemas importantes utilizan datos guardados del mundo y sincronización cliente-servidor.
+
+Esto permite que:
+
+- Los waypoints sobrevivan a reinicios.
+- Los senderos sobrevivan a reinicios.
+- La cuenta regresiva conserve su fecha final.
+- Los jugadores que entren posteriormente reciban los datos actuales.
+- Cada jugador pueda trabajar con su propia selección de sendero sin afectar la selección de los demás.
+
+El mod está diseñado para funcionar como mod de **cliente y servidor** en servidores Forge.
 
 ## Compatibilidad
 
 - **Minecraft:** 1.20.1
-- **Loader:** Forge
 - **Forge:** 47.4.23
 - **Java:** 17
 
-## Para qué sirve
+## Desarrollo
 
-NegativeUtils está pensado principalmente para servidores, eventos, mapas personalizados y proyectos que necesiten varias herramientas administrativas y de interacción sin tener que instalar un mod diferente para cada función.
+NegativeUtils forma parte de los proyectos de **Negative Studios**.
 
-El mod se encuentra en desarrollo y algunas funciones pueden cambiar, ampliarse o sustituirse con el tiempo.
+La versión actual está en desarrollo y las funciones pueden seguir ampliándose o modificándose.
 
-## Negative Studios
-
-NegativeUtils forma parte de los proyectos de **Negative Studios** y está diseñado para servir como una base de utilidades reutilizables para sus servidores y proyectos de Minecraft.
-
----
-
-**Estado:** En desarrollo  
 **Versión:** 1.0.3
