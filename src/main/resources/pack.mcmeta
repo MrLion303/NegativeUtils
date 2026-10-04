@@ -1,1 +1,6 @@
-{\n  "pack": {\n    "pack_format": 15,\n    "description": "NegativeUtils"\n  }\n}\n
+{
+  "pack": {
+    "pack_format": 15,
+    "description": "NegativeUtils"
+  }
+}
