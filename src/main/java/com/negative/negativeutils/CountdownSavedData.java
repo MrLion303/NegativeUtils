@@ -11,7 +11,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
 
 public class CountdownSavedData extends SavedData {
-    private static final String DATA_NAME = "negativeutils_countdowns";
+    private static final String DATA_NAME = "negativeutils_countdown";
     private final List<Countdown> countdowns = new ArrayList<>();
 
     public static CountdownSavedData get(MinecraftServer server) {
