@@ -68,10 +68,10 @@ public final class CountdownNetwork {
         final List<SyncEntry> list; SyncPacket(List<SyncEntry> l){list=List.copyOf(l);}
         static void encode(SyncPacket p,FriendlyByteBuf b){b.writeVarInt(p.list.size());for(var x:p.list){b.writeUUID(x.id());b.writeUtf(x.name(),32);b.writeBoolean(x.running());b.writeBoolean(x.finished());b.writeLong(x.end());b.writeLong(x.remaining());b.writeUtf(x.text(),100);b.writeInt(x.color());b.writeUtf(x.position(),16);}}
         static SyncPacket decode(FriendlyByteBuf b){int n=b.readVarInt();if(n<0||n>512)throw new IllegalArgumentException("Cantidad inválida");List<SyncEntry> l=new ArrayList<>();for(int i=0;i<n;i++)l.add(new SyncEntry(b.readUUID(),b.readUtf(32),b.readBoolean(),b.readBoolean(),b.readLong(),b.readLong(),b.readUtf(100),b.readInt(),b.readUtf(16)));return new SyncPacket(l);}
-        static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->{List<CountdownClientData.Entry> l=new ArrayList<>();for(var x:p.list)l.add(new CountdownClientData.Entry(x.id(),x.name(),x.running(),x.finished(),x.end(),x.remaining(),x.text(),x.color(),x.position()));CountdownClientData.set(l); if(net.minecraft.client.Minecraft.getInstance().screen instanceof AdminPanelScreen screen) screen.refreshData();}));c.setPacketHandled(true);}
+        static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->{List<CountdownClientData.Entry> l=new ArrayList<>();for(var x:p.list)l.add(new CountdownClientData.Entry(x.id(),x.name(),x.running(),x.finished(),x.end(),x.remaining(),x.text(),x.color(),x.position()));CountdownClientData.set(l); NegativeUtilsClientPacketHandler.refreshAdminPanel();}));c.setPacketHandled(true);}
     }
     private static class OpenPacket {
         static void encode(OpenPacket p,FriendlyByteBuf b){} static OpenPacket decode(FriendlyByteBuf b){return new OpenPacket();}
-        static void handle(OpenPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->net.minecraft.client.Minecraft.getInstance().setScreen(new AdminPanelScreen())));c.setPacketHandled(true);}
+        static void handle(OpenPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->NegativeUtilsClientPacketHandler.openAdminPanel()));c.setPacketHandled(true);}
     }
 }
