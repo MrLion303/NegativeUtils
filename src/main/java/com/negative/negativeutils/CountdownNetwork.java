@@ -1,5 +1,8 @@
 package com.negative.negativeutils;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,363 +19,59 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class CountdownNetwork {
-    private static final String PROTOCOL_VERSION = "1";
-
-    public static final SimpleChannel CHANNEL =
-            NetworkRegistry.newSimpleChannel(
-                    new ResourceLocation("negativeutils", "countdown"),
-                    () -> PROTOCOL_VERSION,
-                    PROTOCOL_VERSION::equals,
-                    PROTOCOL_VERSION::equals
-            );
-
-    private static int nextMessageId = 0;
-
-    private CountdownNetwork() {
-    }
-
-    @Mod.EventBusSubscriber(
-            modid = "negativeutils",
-            bus = Mod.EventBusSubscriber.Bus.MOD
-    )
+    private static final String PROTOCOL="2";
+    private static final SimpleChannel CHANNEL=NetworkRegistry.newSimpleChannel(
+            ResourceLocation.fromNamespaceAndPath("negativeutils","countdown"),
+            ()->PROTOCOL,PROTOCOL::equals,PROTOCOL::equals);
+    private static int id=0;
+    private CountdownNetwork(){}
+    @Mod.EventBusSubscriber(modid="negativeutils",bus=Mod.EventBusSubscriber.Bus.MOD)
     public static class Registration {
-        @SubscribeEvent
-        public static void onCommonSetup(FMLCommonSetupEvent event) {
-            event.enqueueWork(() -> {
-                CHANNEL.registerMessage(
-                        nextMessageId++,
-                        StartCountdownPacket.class,
-                        StartCountdownPacket::encode,
-                        StartCountdownPacket::decode,
-                        StartCountdownPacket::handle
-                );
-
-                CHANNEL.registerMessage(
-                        nextMessageId++,
-                        SyncCountdownPacket.class,
-                        SyncCountdownPacket::encode,
-                        SyncCountdownPacket::decode,
-                        SyncCountdownPacket::handle
-                );
-
-                CHANNEL.registerMessage(
-                        nextMessageId++,
-                        OpenAdminPanelPacket.class,
-                        OpenAdminPanelPacket::encode,
-                        OpenAdminPanelPacket::decode,
-                        OpenAdminPanelPacket::handle
-                );
-
-                CHANNEL.registerMessage(
-                        nextMessageId++,
-                        ResetCountdownPacket.class,
-                        ResetCountdownPacket::encode,
-                        ResetCountdownPacket::decode,
-                        ResetCountdownPacket::handle
-                );
-            });
-        }
+        @SubscribeEvent public static void onCommonSetup(FMLCommonSetupEvent e) { e.enqueueWork(()->{
+            CHANNEL.registerMessage(id++,SavePacket.class,SavePacket::encode,SavePacket::decode,SavePacket::handle);
+            CHANNEL.registerMessage(id++,TogglePacket.class,TogglePacket::encode,TogglePacket::decode,TogglePacket::handle);
+            CHANNEL.registerMessage(id++,DeletePacket.class,DeletePacket::encode,DeletePacket::decode,DeletePacket::handle);
+            CHANNEL.registerMessage(id++,SyncPacket.class,SyncPacket::encode,SyncPacket::decode,SyncPacket::handle);
+            CHANNEL.registerMessage(id++,OpenPacket.class,OpenPacket::encode,OpenPacket::decode,OpenPacket::handle);
+        });}
     }
-
-    public static void startCountdown(
-            long targetTimeMillis,
-            String displayText,
-            int displayColor,
-            String displayPosition
-    ) {
-        CHANNEL.sendToServer(
-                new StartCountdownPacket(
-                        targetTimeMillis,
-                        displayText,
-                        displayColor,
-                        displayPosition
-                )
-        );
+    public static void saveCountdown(UUID uuid,String name,long seconds,String text,int color,String position){CHANNEL.sendToServer(new SavePacket(uuid,name,seconds,text,color,position));}
+    public static void toggleCountdown(UUID uuid){CHANNEL.sendToServer(new TogglePacket(uuid));}
+    public static void deleteCountdown(UUID uuid){CHANNEL.sendToServer(new DeletePacket(uuid));}
+    public static void openAdminPanel(ServerPlayer player){syncToPlayer(player);CHANNEL.send(PacketDistributor.PLAYER.with(()->player),new OpenPacket());}
+    public static void syncToPlayer(ServerPlayer player){sync(CountdownSavedData.get(player.getServer()),PacketDistributor.PLAYER.with(()->player));}
+    public static void syncAll(CountdownSavedData data){sync(data,PacketDistributor.ALL.noArg());}
+    private static void sync(CountdownSavedData d,PacketDistributor.PacketTarget target){
+        List<SyncEntry> list=new ArrayList<>();
+        for(var c:d.getCountdowns()) list.add(new SyncEntry(c.id(),c.name(),c.running(),c.finished(),c.endTimeMillis(),c.pausedRemainingMillis(),c.displayText(),c.displayColor(),c.displayPosition()));
+        CHANNEL.send(target,new SyncPacket(list));
     }
-
-    public static void resetCountdown() {
-        CHANNEL.sendToServer(new ResetCountdownPacket());
+    private static class SavePacket {
+        final UUID uuid; final String name,text,position; final long seconds; final int color;
+        SavePacket(UUID u,String n,long s,String t,int c,String p){uuid=u;name=n;text=t;seconds=s;color=c;position=p;}
+        static void encode(SavePacket p,FriendlyByteBuf b){b.writeBoolean(p.uuid!=null);if(p.uuid!=null)b.writeUUID(p.uuid);b.writeUtf(p.name,32);b.writeLong(p.seconds);b.writeUtf(p.text,100);b.writeInt(p.color);b.writeUtf(p.position,16);}
+        static SavePacket decode(FriendlyByteBuf b){UUID u=b.readBoolean()?b.readUUID():null;return new SavePacket(u,b.readUtf(32),b.readLong(),b.readUtf(100),b.readInt(),b.readUtf(16));}
+        static void handle(SavePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer player=c.getSender();if(player==null||!player.hasPermissions(2))return;var d=CountdownSavedData.get(player.getServer());long sec=Math.max(1,Math.min(p.seconds,315360000L));if(p.uuid==null)d.create(p.name,sec*1000L,p.text,p.color,p.position);else d.update(p.uuid,p.name,sec*1000L,p.text,p.color,p.position);sync(d,PacketDistributor.ALL.noArg());});c.setPacketHandled(true);}
     }
-
-    public static void openAdminPanel(ServerPlayer player) {
-        CHANNEL.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                new OpenAdminPanelPacket()
-        );
+    private static class TogglePacket {
+        final UUID uuid; TogglePacket(UUID u){uuid=u;}
+        static void encode(TogglePacket p,FriendlyByteBuf b){b.writeUUID(p.uuid);} static TogglePacket decode(FriendlyByteBuf b){return new TogglePacket(b.readUUID());}
+        static void handle(TogglePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer pl=c.getSender();if(pl==null||!pl.hasPermissions(2))return;var d=CountdownSavedData.get(pl.getServer());var x=d.getById(p.uuid);if(x!=null)d.setRunning(x.id(),!x.running());sync(d,PacketDistributor.ALL.noArg());});c.setPacketHandled(true);}
     }
-
-    public static void syncToPlayer(
-            ServerPlayer player,
-            CountdownSavedData data
-    ) {
-        CHANNEL.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                createSyncPacket(data)
-        );
+    private static class DeletePacket {
+        final UUID uuid; DeletePacket(UUID u){uuid=u;}
+        static void encode(DeletePacket p,FriendlyByteBuf b){b.writeUUID(p.uuid);} static DeletePacket decode(FriendlyByteBuf b){return new DeletePacket(b.readUUID());}
+        static void handle(DeletePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer pl=c.getSender();if(pl==null||!pl.hasPermissions(2))return;var d=CountdownSavedData.get(pl.getServer());d.remove(p.uuid);sync(d,PacketDistributor.ALL.noArg());});c.setPacketHandled(true);}
     }
-
-    public static void syncToEveryone(CountdownSavedData data) {
-        CHANNEL.send(
-                PacketDistributor.ALL.noArg(),
-                createSyncPacket(data)
-        );
+    private record SyncEntry(UUID id,String name,boolean running,boolean finished,long end,long remaining,String text,int color,String position){}
+    private static class SyncPacket {
+        final List<SyncEntry> list; SyncPacket(List<SyncEntry> l){list=List.copyOf(l);}
+        static void encode(SyncPacket p,FriendlyByteBuf b){b.writeVarInt(p.list.size());for(var x:p.list){b.writeUUID(x.id());b.writeUtf(x.name(),32);b.writeBoolean(x.running());b.writeBoolean(x.finished());b.writeLong(x.end());b.writeLong(x.remaining());b.writeUtf(x.text(),100);b.writeInt(x.color());b.writeUtf(x.position(),16);}}
+        static SyncPacket decode(FriendlyByteBuf b){int n=b.readVarInt();if(n<0||n>512)throw new IllegalArgumentException("Cantidad inválida");List<SyncEntry> l=new ArrayList<>();for(int i=0;i<n;i++)l.add(new SyncEntry(b.readUUID(),b.readUtf(32),b.readBoolean(),b.readBoolean(),b.readLong(),b.readLong(),b.readUtf(100),b.readInt(),b.readUtf(16)));return new SyncPacket(l);}
+        static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->{List<CountdownClientData.Entry> l=new ArrayList<>();for(var x:p.list)l.add(new CountdownClientData.Entry(x.id(),x.name(),x.running(),x.finished(),x.end(),x.remaining(),x.text(),x.color(),x.position()));CountdownClientData.set(l);}));c.setPacketHandled(true);}
     }
-
-    private static SyncCountdownPacket createSyncPacket(
-            CountdownSavedData data
-    ) {
-        return new SyncCountdownPacket(
-                data.isConfigured(),
-                data.isRunning(),
-                data.isFinished(),
-                data.getEndTimeMillis(),
-                data.isRunning() ? 0 : data.getRemainingMillis(),
-                data.getDisplayText(),
-                data.getDisplayColor(),
-                data.getDisplayPosition()
-        );
-    }
-
-    private static boolean isValidPosition(String position) {
-        return "BOSSBAR".equals(position)
-                || "ACTIONBAR".equals(position)
-                || "SCOREBOARD".equals(position)
-                || "TITLE".equals(position);
-    }
-
-    private static class StartCountdownPacket {
-        private final long targetTimeMillis;
-        private final String displayText;
-        private final int displayColor;
-        private final String displayPosition;
-
-        private StartCountdownPacket(
-                long targetTimeMillis,
-                String displayText,
-                int displayColor,
-                String displayPosition
-        ) {
-            this.targetTimeMillis = targetTimeMillis;
-            this.displayText = displayText == null
-                    ? ""
-                    : displayText.substring(0, Math.min(displayText.length(), 100));
-            this.displayColor = displayColor & 0xFFFFFF;
-            this.displayPosition = isValidPosition(displayPosition)
-                    ? displayPosition
-                    : "BOSSBAR";
-        }
-
-        private static void encode(
-                StartCountdownPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            buffer.writeLong(packet.targetTimeMillis);
-            buffer.writeUtf(packet.displayText, 100);
-            buffer.writeInt(packet.displayColor);
-            buffer.writeUtf(packet.displayPosition, 16);
-        }
-
-        private static StartCountdownPacket decode(FriendlyByteBuf buffer) {
-            return new StartCountdownPacket(
-                    buffer.readLong(),
-                    buffer.readUtf(100),
-                    buffer.readInt(),
-                    buffer.readUtf(16)
-            );
-        }
-
-        private static void handle(
-                StartCountdownPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-
-                if (player == null || !player.hasPermissions(2)) {
-                    return;
-                }
-
-                long durationMillis = Math.max(
-                        0,
-                        packet.targetTimeMillis - System.currentTimeMillis()
-                );
-
-                CountdownSavedData data =
-                        CountdownSavedData.get(player.getServer());
-
-                data.start(
-                        durationMillis,
-                        packet.displayText,
-                        packet.displayColor,
-                        packet.displayPosition
-                );
-
-                syncToEveryone(data);
-            });
-
-            context.setPacketHandled(true);
-        }
-    }
-
-    private static class ResetCountdownPacket {
-        private ResetCountdownPacket() {
-        }
-
-        private static void encode(
-                ResetCountdownPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            // Este paquete no necesita datos.
-        }
-
-        private static ResetCountdownPacket decode(FriendlyByteBuf buffer) {
-            return new ResetCountdownPacket();
-        }
-
-        private static void handle(
-                ResetCountdownPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-
-                if (player == null || !player.hasPermissions(2)) {
-                    return;
-                }
-
-                CountdownSavedData data =
-                        CountdownSavedData.get(player.getServer());
-
-                data.reset();
-                syncToEveryone(data);
-            });
-
-            context.setPacketHandled(true);
-        }
-    }
-
-    private static class SyncCountdownPacket {
-        private final boolean configured;
-        private final boolean running;
-        private final boolean finished;
-        private final long endTimeMillis;
-        private final long pausedRemainingMillis;
-        private final String displayText;
-        private final int displayColor;
-        private final String displayPosition;
-
-        private SyncCountdownPacket(
-                boolean configured,
-                boolean running,
-                boolean finished,
-                long endTimeMillis,
-                long pausedRemainingMillis,
-                String displayText,
-                int displayColor,
-                String displayPosition
-        ) {
-            this.configured = configured;
-            this.running = running;
-            this.finished = finished;
-            this.endTimeMillis = endTimeMillis;
-            this.pausedRemainingMillis = pausedRemainingMillis;
-            this.displayText = displayText == null
-                    ? ""
-                    : displayText.substring(0, Math.min(displayText.length(), 100));
-            this.displayColor = displayColor & 0xFFFFFF;
-            this.displayPosition = isValidPosition(displayPosition)
-                    ? displayPosition
-                    : "BOSSBAR";
-        }
-
-        private static void encode(
-                SyncCountdownPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            buffer.writeBoolean(packet.configured);
-            buffer.writeBoolean(packet.running);
-            buffer.writeBoolean(packet.finished);
-            buffer.writeLong(packet.endTimeMillis);
-            buffer.writeLong(packet.pausedRemainingMillis);
-            buffer.writeUtf(packet.displayText, 100);
-            buffer.writeInt(packet.displayColor);
-            buffer.writeUtf(packet.displayPosition, 16);
-        }
-
-        private static SyncCountdownPacket decode(FriendlyByteBuf buffer) {
-            return new SyncCountdownPacket(
-                    buffer.readBoolean(),
-                    buffer.readBoolean(),
-                    buffer.readBoolean(),
-                    buffer.readLong(),
-                    buffer.readLong(),
-                    buffer.readUtf(100),
-                    buffer.readInt(),
-                    buffer.readUtf(16)
-            );
-        }
-
-        private static void handle(
-                SyncCountdownPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-
-            context.enqueueWork(() ->
-                    DistExecutor.unsafeRunWhenOn(
-                            Dist.CLIENT,
-                            () -> () -> NegativeUtilsClientPacketHandler
-                                    .updateCountdown(
-                                            packet.configured,
-                                            packet.running,
-                                            packet.finished,
-                                            packet.endTimeMillis,
-                                            packet.pausedRemainingMillis,
-                                            packet.displayText,
-                                            packet.displayColor,
-                                            packet.displayPosition
-                                    )
-                    )
-            );
-
-            context.setPacketHandled(true);
-        }
-    }
-
-    private static class OpenAdminPanelPacket {
-        private OpenAdminPanelPacket() {
-        }
-
-        private static void encode(
-                OpenAdminPanelPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            // Este paquete no necesita datos.
-        }
-
-        private static OpenAdminPanelPacket decode(FriendlyByteBuf buffer) {
-            return new OpenAdminPanelPacket();
-        }
-
-        private static void handle(
-                OpenAdminPanelPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-
-            context.enqueueWork(() ->
-                    DistExecutor.unsafeRunWhenOn(
-                            Dist.CLIENT,
-                            () -> () -> NegativeUtilsClientPacketHandler
-                                    .openAdminPanel()
-                    )
-            );
-
-            context.setPacketHandled(true);
-        }
+    private static class OpenPacket {
+        static void encode(OpenPacket p,FriendlyByteBuf b){} static OpenPacket decode(FriendlyByteBuf b){return new OpenPacket();}
+        static void handle(OpenPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->net.minecraft.client.Minecraft.getInstance().setScreen(new AdminPanelScreen())));c.setPacketHandled(true);}
     }
 }
