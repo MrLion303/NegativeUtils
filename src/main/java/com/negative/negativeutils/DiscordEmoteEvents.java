@@ -16,7 +16,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(
-        modid = EnciclopediaMod.MOD_ID,
+        modid = "negativeutils",
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class DiscordEmoteEvents {
@@ -147,7 +147,7 @@ public final class DiscordEmoteEvents {
                             new String(Character.toChars(codePoint))
                     ).withStyle(style -> style.withFont(
                             ResourceLocation.fromNamespaceAndPath(
-                                    EnciclopediaMod.MOD_ID,
+                                    "negativeutils",
                                     "discord_emotes"
                             )
                     ))
