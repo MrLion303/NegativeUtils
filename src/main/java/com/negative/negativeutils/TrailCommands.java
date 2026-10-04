@@ -194,7 +194,7 @@ public final class TrailCommands {
                                                             context.getSource().sendSuccess(() -> Component.literal(
                                                                     "Color del sendero '" + trail.name() + "' actualizado a #" + hex.toUpperCase(java.util.Locale.ROOT) + "."), true);
                                                             return Command.SINGLE_SUCCESS;
-                                                        })))
+                                                        }))))
                                 .then(Commands.literal("lista")
                                         .executes(context -> list(context)))
                                 .then(Commands.literal("deseleccionar")
