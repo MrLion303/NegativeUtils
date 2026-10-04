@@ -18,6 +18,6 @@ public class TrailLoginEvents {
         }
 
         TrailSavedData data = TrailSavedData.get(player.getServer());
-        TrailNetwork.sendToPlayer(player, data.getPoints());
+        TrailNetwork.sendToPlayer(player, data.getTrails());
     }
 }
