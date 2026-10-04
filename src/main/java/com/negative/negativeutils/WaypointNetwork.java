@@ -2,6 +2,7 @@ package com.negative.negativeutils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import net.minecraft.core.BlockPos;
@@ -11,19 +12,19 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class WaypointNetwork {
-    private static final String PROTOCOL = "2";
+    private static final String PROTOCOL = "3";
     private static final int MAX_WAYPOINTS_PER_PACKET = 256;
+
     private static final SimpleChannel CHANNEL =
             NetworkRegistry.newSimpleChannel(
                     ResourceLocation.fromNamespaceAndPath(
-                            EnciclopediaMod.MOD_ID,
+                            "negativeutils",
                             "waypoints"
                     ),
                     () -> PROTOCOL,
@@ -40,7 +41,9 @@ public final class WaypointNetwork {
         if (registered) {
             return;
         }
+
         registered = true;
+
         CHANNEL.registerMessage(
                 0,
                 CreateWaypointPacket.class,
@@ -80,7 +83,7 @@ public final class WaypointNetwork {
         );
     }
 
-    public static void delete(java.util.UUID waypointId) {
+    public static void delete(UUID waypointId) {
         CHANNEL.sendToServer(new DeleteWaypointPacket(waypointId));
     }
 
@@ -107,12 +110,14 @@ public final class WaypointNetwork {
                 (waypoints.size() + MAX_WAYPOINTS_PER_PACKET - 1)
                         / MAX_WAYPOINTS_PER_PACKET
         );
+
         for (int packetIndex = 0; packetIndex < packetCount; packetIndex++) {
             int start = packetIndex * MAX_WAYPOINTS_PER_PACKET;
             int end = Math.min(
                     waypoints.size(),
                     start + MAX_WAYPOINTS_PER_PACKET
             );
+
             CHANNEL.send(
                     target,
                     new SyncWaypointsPacket(
@@ -189,6 +194,7 @@ public final class WaypointNetwork {
                         packet.blockPos.getY() + 4.0,
                         packet.blockPos.getZ() + 0.5
                 );
+
                 WaypointSavedData.Waypoint waypoint = data.add(
                         player.getUUID(),
                         cleanName,
@@ -196,6 +202,7 @@ public final class WaypointNetwork {
                         markerPosition,
                         packet.color
                 );
+
                 if (waypoint == null) {
                     player.displayClientMessage(
                             net.minecraft.network.chat.Component.literal(
@@ -220,7 +227,7 @@ public final class WaypointNetwork {
         }
     }
 
-    private record DeleteWaypointPacket(java.util.UUID waypointId) {
+    private record DeleteWaypointPacket(UUID waypointId) {
         private static void encode(
                 DeleteWaypointPacket packet,
                 FriendlyByteBuf buffer
@@ -261,6 +268,7 @@ public final class WaypointNetwork {
                                 candidate.id().equals(packet.waypointId))
                         .findFirst()
                         .orElse(null);
+
                 if (waypoint == null
                         || !waypoint.dimension().equals(
                                 player.level().dimension().location().toString()
@@ -287,6 +295,7 @@ public final class WaypointNetwork {
                         player.hasPermissions(2),
                         waypoint.dimension()
                 );
+
                 if (removed == null) {
                     player.displayClientMessage(
                             net.minecraft.network.chat.Component.literal(
@@ -323,6 +332,7 @@ public final class WaypointNetwork {
         ) {
             buffer.writeBoolean(packet.startsBatch);
             buffer.writeVarInt(packet.waypoints.size());
+
             for (WaypointSavedData.Waypoint waypoint : packet.waypoints) {
                 buffer.writeUUID(waypoint.id());
                 buffer.writeUUID(waypoint.owner());
@@ -333,12 +343,14 @@ public final class WaypointNetwork {
                 buffer.writeDouble(waypoint.z());
                 buffer.writeInt(waypoint.color());
                 buffer.writeByte(waypoint.shape());
+                buffer.writeBoolean(waypoint.visible());
             }
         }
 
         private static SyncWaypointsPacket decode(FriendlyByteBuf buffer) {
             boolean startsBatch = buffer.readBoolean();
             int count = buffer.readVarInt();
+
             if (count < 0 || count > MAX_WAYPOINTS_PER_PACKET) {
                 throw new IllegalArgumentException(
                         "Cantidad de waypoints sincronizados no válida: " + count
@@ -347,6 +359,7 @@ public final class WaypointNetwork {
 
             List<WaypointSavedData.Waypoint> waypoints =
                     new ArrayList<>(count);
+
             for (int i = 0; i < count; i++) {
                 waypoints.add(new WaypointSavedData.Waypoint(
                         buffer.readUUID(),
@@ -357,9 +370,11 @@ public final class WaypointNetwork {
                         buffer.readDouble(),
                         buffer.readDouble(),
                         buffer.readInt() & 0xFFFFFF,
-                        buffer.readByte()
+                        buffer.readByte(),
+                        buffer.readBoolean()
                 ));
             }
+
             return new SyncWaypointsPacket(waypoints, startsBatch);
         }
 
