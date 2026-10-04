@@ -24,7 +24,7 @@ public final class AdminPanelCommands {
                                         && source.getEntity() instanceof ServerPlayer
                         )
                         .then(
-                                Commands.literal("cuenta")
+                                Commands.literal("contador")
                                         .executes(context -> {
                                             ServerPlayer player =
                                                     context.getSource()
