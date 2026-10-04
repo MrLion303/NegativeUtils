@@ -91,6 +91,9 @@ public class WaypointSavedData extends SavedData {
             int color
     ) {
         String cleanName = sanitizeName(name);
+        if (cleanName.isBlank()) {
+            cleanName = nextAutomaticName();
+        }
         ResourceLocation dimensionId = ResourceLocation.tryParse(dimension);
 
         if (owner == null
@@ -117,6 +120,14 @@ public class WaypointSavedData extends SavedData {
         waypoints.add(waypoint);
         setDirty();
         return waypoint;
+    }
+
+    private String nextAutomaticName() {
+        int number = 1;
+        while (getByName("Waypoint " + number) != null) {
+            number++;
+        }
+        return "Waypoint " + number;
     }
 
     public Waypoint getByName(String name) {
