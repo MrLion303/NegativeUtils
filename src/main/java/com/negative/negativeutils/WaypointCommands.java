@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -29,6 +30,15 @@ public final class WaypointCommands {
                                                 .then(Commands.argument(
                                                         "nombre",
                                                         StringArgumentType.string()
+                                                ).suggests((context, builder) ->
+                                                        SharedSuggestionProvider.suggest(
+                                                                WaypointSavedData.get(context.getSource().getServer())
+                                                                        .getWaypoints()
+                                                                        .stream()
+                                                                        .map(WaypointSavedData.Waypoint::name)
+                                                                        .toList(),
+                                                                builder
+                                                        )
                                                 ).executes(context ->
                                                         setVisible(context.getSource(), context.getArgument("nombre", String.class), true)
                                                 )))
