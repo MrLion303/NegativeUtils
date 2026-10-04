@@ -97,12 +97,7 @@ public final class WaypointRenderer {
                 );
             }
 
-            drawHudMarker(
-                    graphics,
-                    x,
-                    y + 12,
-                    0xFF000000 | waypoint.color()
-            );
+            graphics.drawString(font, waypoint.icon(), x, y + 11, 0xFF000000 | waypoint.color(), true);
 
             graphics.drawString(
                     font,
@@ -186,7 +181,7 @@ public final class WaypointRenderer {
                     anchor.y,
                     anchor.z,
                     yaw,
-                    "■",
+                    waypoint.icon(),
                     MARKER_SCALE,
                     color,
                     Font.DisplayMode.NORMAL,
