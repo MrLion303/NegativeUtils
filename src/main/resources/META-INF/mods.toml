@@ -4,7 +4,7 @@ license="All Rights Reserved to Negative Studios"
 
 [[mods]]
 modId="negativeutils"
-version="\${file.jarVersion}"
+version="${file.jarVersion}"
 displayName="NegativeUtils"
 authors="Negative Studios"
 description='''Pack de utilidades de Negative Studios para servidores y proyectos de Minecraft.'''
