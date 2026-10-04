@@ -9,21 +9,19 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.phys.Vec3;
 
 public class WaypointSavedData extends SavedData {
     private static final String DATA_NAME = "negativeutils_waypoints";
     private final List<Waypoint> waypoints = new ArrayList<>();
 
     public static WaypointSavedData get(MinecraftServer server) {
-        return server.overworld()
-                .getDataStorage()
-                .computeIfAbsent(
-                        WaypointSavedData::load,
-                        WaypointSavedData::new,
-                        DATA_NAME
-                );
+        return server.overworld().getDataStorage().computeIfAbsent(
+                WaypointSavedData::load,
+                WaypointSavedData::new,
+                DATA_NAME
+        );
     }
 
     public static WaypointSavedData load(CompoundTag tag) {
@@ -35,27 +33,27 @@ public class WaypointSavedData extends SavedData {
             ResourceLocation dimension = ResourceLocation.tryParse(
                     saved.getString("Dimension")
             );
+
             try {
                 if (dimension == null
                         || !saved.hasUUID("Id")
                         || !saved.hasUUID("Owner")) {
                     continue;
                 }
-                String name = sanitizeName(saved.getString("Name"));
-                int color = saved.getInt("Color") & 0xFFFFFF;
+
                 data.waypoints.add(new Waypoint(
                         saved.getUUID("Id"),
                         saved.getUUID("Owner"),
-                        name,
+                        sanitizeName(saved.getString("Name")),
                         dimension.toString(),
                         saved.getDouble("X"),
                         saved.getDouble("Y"),
                         saved.getDouble("Z"),
-                        color,
-                        1
+                        saved.getInt("Color") & 0xFFFFFF,
+                        saved.contains("Shape") ? saved.getInt("Shape") : 1,
+                        !saved.contains("Visible") || saved.getBoolean("Visible")
                 ));
             } catch (IllegalArgumentException ignored) {
-                // Ignore malformed entries without preventing other saved waypoints from loading.
             }
         }
 
@@ -65,6 +63,7 @@ public class WaypointSavedData extends SavedData {
     @Override
     public CompoundTag save(CompoundTag tag) {
         ListTag savedWaypoints = new ListTag();
+
         for (Waypoint waypoint : waypoints) {
             CompoundTag saved = new CompoundTag();
             saved.putUUID("Id", waypoint.id());
@@ -76,8 +75,10 @@ public class WaypointSavedData extends SavedData {
             saved.putDouble("Z", waypoint.z());
             saved.putInt("Color", waypoint.color());
             saved.putInt("Shape", waypoint.shape());
+            saved.putBoolean("Visible", waypoint.visible());
             savedWaypoints.add(saved);
         }
+
         tag.put("Waypoints", savedWaypoints);
         return tag;
     }
@@ -91,6 +92,7 @@ public class WaypointSavedData extends SavedData {
     ) {
         String cleanName = sanitizeName(name);
         ResourceLocation dimensionId = ResourceLocation.tryParse(dimension);
+
         if (owner == null
                 || dimensionId == null
                 || position == null
@@ -109,11 +111,54 @@ public class WaypointSavedData extends SavedData {
                 position.y,
                 position.z,
                 color & 0xFFFFFF,
-                1
+                1,
+                true
         );
         waypoints.add(waypoint);
         setDirty();
         return waypoint;
+    }
+
+    public Waypoint getByName(String name) {
+        String cleanName = sanitizeName(name);
+        for (Waypoint waypoint : waypoints) {
+            if (waypoint.name().equals(cleanName)) {
+                return waypoint;
+            }
+        }
+        return null;
+    }
+
+    public boolean setVisible(UUID id, boolean visible) {
+        for (int i = 0; i < waypoints.size(); i++) {
+            Waypoint waypoint = waypoints.get(i);
+            if (!waypoint.id().equals(id)) {
+                continue;
+            }
+
+            if (waypoint.visible() == visible) {
+                return true;
+            }
+
+            waypoints.set(
+                    i,
+                    new Waypoint(
+                            waypoint.id(),
+                            waypoint.owner(),
+                            waypoint.name(),
+                            waypoint.dimension(),
+                            waypoint.x(),
+                            waypoint.y(),
+                            waypoint.z(),
+                            waypoint.color(),
+                            waypoint.shape(),
+                            visible
+                    )
+            );
+            setDirty();
+            return true;
+        }
+        return false;
     }
 
     public Waypoint removeById(
@@ -166,7 +211,8 @@ public class WaypointSavedData extends SavedData {
             double y,
             double z,
             int color,
-            int shape
+            int shape,
+            boolean visible
     ) {
     }
 }
