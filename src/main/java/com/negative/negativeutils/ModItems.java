@@ -5,7 +5,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-public class ModItems {
+public final class ModItems {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(
                     ForgeRegistries.ITEMS,
@@ -27,7 +27,7 @@ public class ModItems {
     public static final RegistryObject<Item> RESPAWN_WAND =
             ITEMS.register(
                     "respawn_wand",
-                    () -> new Item(new Item.Properties().stacksTo(1))
+                    RespawnWandItem::new
             );
 
     private ModItems() {
