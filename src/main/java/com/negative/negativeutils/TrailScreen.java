@@ -1,6 +1,8 @@
 package com.negative.negativeutils;
 
 import java.util.Locale;
+import java.util.UUID;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -11,6 +13,8 @@ public final class TrailScreen extends Screen {
     private static final int WHEEL_CELL_SIZE = 3;
     private static final int SLIDER_WIDTH = 176;
 
+    private final UUID trailId;
+    private final String trailName;
     private int red;
     private int green;
     private int blue;
@@ -22,12 +26,16 @@ public final class TrailScreen extends Screen {
     private boolean draggingOpacity;
 
     public TrailScreen(
+            UUID trailId,
+            String trailName,
             int red,
             int green,
             int blue,
             int opacityPercent
     ) {
-        super(Component.literal("Ajustes de la guía"));
+        super(Component.literal("Ajustes del sendero"));
+        this.trailId = trailId;
+        this.trailName = trailName;
         this.red = clamp(red, 0, 255);
         this.green = clamp(green, 0, 255);
         this.blue = clamp(blue, 0, 255);
@@ -46,6 +54,7 @@ public final class TrailScreen extends Screen {
                                 Component.literal("Aplicar"),
                                 button -> {
                                     TrailNetwork.saveSettings(
+                                            trailId,
                                             red,
                                             green,
                                             blue,
@@ -196,7 +205,7 @@ public final class TrailScreen extends Screen {
         graphics.fill(panelLeft, panelTop, panelRight, panelTop + 2, 0xFF54D6FF);
         graphics.drawCenteredString(
                 font,
-                "Ajustes de la guía",
+                "Ajustes de " + trailName,
                 width / 2,
                 panelTop + 8,
                 0xFFFFFFFF
