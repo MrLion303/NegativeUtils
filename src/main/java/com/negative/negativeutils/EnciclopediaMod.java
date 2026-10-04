@@ -5,7 +5,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(EnciclopediaMod.MOD_ID)
-public class EnciclopediaMod {
+public final class EnciclopediaMod {
     public static final String MOD_ID = "negativeutils";
 
     public EnciclopediaMod(FMLJavaModLoadingContext context) {
@@ -18,13 +18,10 @@ public class EnciclopediaMod {
         ModCreativeModeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         TrailNetwork.register();
-        EncyclopediaNetwork.register();
         TimeDelayNetwork.register();
-        GuildNetwork.register();
-        GuildActionsNetwork.register();
-        FeatureToggleNetwork.register();
         WaypointNetwork.register();
         CommandSequenceNetwork.register();
+        CountdownNetwork.Registration.registerChannel();
         DiscordEmoteNetwork.register();
     }
 }
