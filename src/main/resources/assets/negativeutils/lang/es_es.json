@@ -1,7 +1,9 @@
 {
   "item.negativeutils.trail_wand": "Varita de ruta",
-  "item.negativeutils.waypoint_wand": "Varita de waypoints",
   "item.negativeutils.respawn_wand": "PALITOMAGICO",
-  "block.negativeutils.command_sequence": "Bloque de secuencias",
+  "block.negativeutils.time_delay": "Bloque de Tiempo",
+  "block.negativeutils.command_sequence": "Bloque de Secuencias",
+  "item.negativeutils.time_delay": "Bloque de Tiempo",
+  "item.negativeutils.command_sequence": "Bloque de Secuencias",
   "itemGroup.negativeutils": "NegativeUtils"
 }
