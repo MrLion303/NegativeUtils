@@ -9,7 +9,9 @@ import net.minecraftforge.fml.common.Mod;
         modid = "negativeutils",
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
-public class TrailLoginEvents {
+public final class TrailLoginEvents {
+    private TrailLoginEvents() {
+    }
 
     @SubscribeEvent
     public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
@@ -19,5 +21,10 @@ public class TrailLoginEvents {
 
         TrailSavedData data = TrailSavedData.get(player.getServer());
         TrailNetwork.sendToPlayer(player, data.getTrails());
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        TrailSelectionState.clear(event.getEntity().getUUID());
     }
 }
