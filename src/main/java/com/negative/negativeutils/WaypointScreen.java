@@ -21,9 +21,10 @@ public class WaypointScreen extends Screen {
     private final String initialCommandId, initialName, initialDimension, initialIcon, initialCorner;
     private final double initialX, initialY, initialZ;
     private EditBox commandIdInput, nameInput, xInput, yInput, zInput, dimensionInput, colorInput;
+    private Button iconButton;
     private int color, draftColor;
     private String selectedIcon, selectedCorner;
-    private boolean colorPickerOpen;
+    private boolean colorPickerOpen, iconPickerOpen;
 
     public WaypointScreen(UUID id, String commandId, String name, String dimension,
                           double x, double y, double z, int color, String icon, String corner) {
@@ -57,11 +58,9 @@ public class WaypointScreen extends Screen {
         addRenderableWidget(commandIdInput); addRenderableWidget(nameInput);
         addRenderableWidget(xInput); addRenderableWidget(yInput); addRenderableWidget(zInput);
         addRenderableWidget(dimensionInput); addRenderableWidget(colorInput);
-        addRenderableWidget(Button.builder(Component.literal("Icono: " + selectedIcon), button -> {
-            int index = ICONS.indexOf(selectedIcon);
-            selectedIcon = ICONS.get((index + 1) % ICONS.size());
-            button.setMessage(Component.literal("Icono: " + selectedIcon));
-        }).bounds(left, 143, 75, 20).build());
+        iconButton = Button.builder(Component.literal("Icono: " + selectedIcon), button -> iconPickerOpen = true)
+                .bounds(left, 143, 75, 20).build();
+        addRenderableWidget(iconButton);
         addRenderableWidget(Button.builder(Component.literal("Elegir color"), button -> openColorPicker())
                 .bounds(left + 155, 143, 75, 20).build());
         addRenderableWidget(Button.builder(Component.literal(cornerLabel(selectedCorner)), button -> {
@@ -132,6 +131,30 @@ public class WaypointScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (iconPickerOpen) {
+            if (button == 0) {
+                int cx = width / 2;
+                int gridLeft = cx - 105;
+                int gridTop = 80;
+                if (mouseX >= gridLeft && mouseX < gridLeft + 210
+                        && mouseY >= gridTop && mouseY < gridTop + 60) {
+                    int column = (int) ((mouseX - gridLeft) / 30);
+                    int row = (int) ((mouseY - gridTop) / 30);
+                    int index = row * 7 + column;
+                    if (index >= 0 && index < ICONS.size()) {
+                        selectedIcon = ICONS.get(index);
+                        iconButton.setMessage(Component.literal("Icono: " + selectedIcon));
+                        iconPickerOpen = false;
+                        return true;
+                    }
+                }
+                if (mouseX >= cx - 45 && mouseX <= cx + 45 && mouseY >= 155 && mouseY <= 178) {
+                    iconPickerOpen = false;
+                    return true;
+                }
+            }
+            return true;
+        }
         if (colorPickerOpen) {
             if (button == 0) {
                 if (updateColor(mouseX, mouseY)) return true;
@@ -154,8 +177,33 @@ public class WaypointScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (colorPickerOpen && keyCode == 256) { colorPickerOpen = false; return true; }
+        if ((colorPickerOpen || iconPickerOpen) && keyCode == 256) {
+            colorPickerOpen = false;
+            iconPickerOpen = false;
+            return true;
+        }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private void renderIconPicker(GuiGraphics g) {
+        int cx = width / 2;
+        int gridLeft = cx - 105;
+        int gridTop = 80;
+        g.fill(0, 0, width, height, 0xFF101318);
+        g.fill(cx - 125, 48, cx + 125, 190, 0xFF707780);
+        g.fill(cx - 123, 50, cx + 123, 188, 0xFF20242A);
+        g.drawCenteredString(font, "Elige un icono", cx, 60, 0xFFFFFFFF);
+        for (int i = 0; i < ICONS.size(); i++) {
+            int column = i % 7;
+            int row = i / 7;
+            int x = gridLeft + column * 30;
+            int y = gridTop + row * 30;
+            int background = ICONS.get(i).equals(selectedIcon) ? 0xFF397A45 : 0xFF343B45;
+            g.fill(x + 1, y + 1, x + 29, y + 29, background);
+            g.drawCenteredString(font, ICONS.get(i), x + 15, y + 10, 0xFFFFFFFF);
+        }
+        g.fill(cx - 45, 155, cx + 45, 178, 0xFF6B3B3B);
+        g.drawCenteredString(font, "Cancelar", cx, 162, 0xFFFFFFFF);
     }
 
     private void renderColorPicker(GuiGraphics g) {
@@ -197,6 +245,7 @@ public class WaypointScreen extends Screen {
         graphics.drawString(font, "Color HEX", cx - 20, 137, 0xFFD8E1EA);
         super.render(graphics, mouseX, mouseY, partialTick);
         if (colorPickerOpen) renderColorPicker(graphics);
+        else if (iconPickerOpen) renderIconPicker(graphics);
     }
 
     @Override public boolean isPauseScreen() { return false; }
