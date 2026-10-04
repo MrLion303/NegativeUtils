@@ -13,7 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 
 public class TrailSavedData extends SavedData {
-    private static final String DATA_NAME = "negativeutils_trails";
+    private static final String DATA_NAME = "negativeutils_trail";
     private final List<Trail> trails = new ArrayList<>();
 
     public static TrailSavedData get(MinecraftServer server) {
