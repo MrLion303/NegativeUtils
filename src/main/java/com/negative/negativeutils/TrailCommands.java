@@ -79,6 +79,15 @@ public final class TrailCommands {
                                         .then(Commands.argument(
                                                 "nombre",
                                                 StringArgumentType.string()
+                                        ).suggests((context, builder) ->
+                                                SharedSuggestionProvider.suggest(
+                                                        TrailSavedData.get(context.getSource().getServer())
+                                                                .getTrails()
+                                                                .stream()
+                                                                .map(TrailSavedData.Trail::name)
+                                                                .toList(),
+                                                        builder
+                                                )
                                         ).executes(context -> {
                                             String name = StringArgumentType.getString(
                                                     context, "nombre"
@@ -110,6 +119,15 @@ public final class TrailCommands {
                                         .then(Commands.argument(
                                                 "nombre",
                                                 StringArgumentType.string()
+                                        ).suggests((context, builder) ->
+                                                SharedSuggestionProvider.suggest(
+                                                        TrailSavedData.get(context.getSource().getServer())
+                                                                .getTrails()
+                                                                .stream()
+                                                                .map(TrailSavedData.Trail::name)
+                                                                .toList(),
+                                                        builder
+                                                )
                                         ).executes(context ->
                                                 setVisible(context, true)
                                         ))
@@ -118,6 +136,15 @@ public final class TrailCommands {
                                         .then(Commands.argument(
                                                 "nombre",
                                                 StringArgumentType.string()
+                                        ).suggests((context, builder) ->
+                                                SharedSuggestionProvider.suggest(
+                                                        TrailSavedData.get(context.getSource().getServer())
+                                                                .getTrails()
+                                                                .stream()
+                                                                .map(TrailSavedData.Trail::name)
+                                                                .toList(),
+                                                        builder
+                                                )
                                         ).executes(context ->
                                                 setVisible(context, false)
                                         ))
@@ -126,6 +153,15 @@ public final class TrailCommands {
                                         .then(Commands.argument(
                                                 "nombre",
                                                 StringArgumentType.string()
+                                        ).suggests((context, builder) ->
+                                                SharedSuggestionProvider.suggest(
+                                                        TrailSavedData.get(context.getSource().getServer())
+                                                                .getTrails()
+                                                                .stream()
+                                                                .map(TrailSavedData.Trail::name)
+                                                                .toList(),
+                                                        builder
+                                                )
                                         ).executes(context ->
                                                 remove(context)
                                         ))
