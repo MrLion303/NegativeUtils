@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
-
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,388 +16,51 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class WaypointNetwork {
-    private static final String PROTOCOL = "3";
-    private static final int MAX_WAYPOINTS_PER_PACKET = 256;
-
-    private static final SimpleChannel CHANNEL =
-            NetworkRegistry.newSimpleChannel(
-                    ResourceLocation.fromNamespaceAndPath(
-                            "negativeutils",
-                            "waypoints"
-                    ),
-                    () -> PROTOCOL,
-                    PROTOCOL::equals,
-                    PROTOCOL::equals
-            );
-
+    private static final String PROTOCOL="4";
+    private static final SimpleChannel CHANNEL=NetworkRegistry.newSimpleChannel(ResourceLocation.fromNamespaceAndPath("negativeutils","waypoints"),()->PROTOCOL,PROTOCOL::equals,PROTOCOL::equals);
     private static boolean registered;
-
-    private WaypointNetwork() {
+    private WaypointNetwork(){}
+    public static void register(){
+        if(registered)return;registered=true;
+        CHANNEL.registerMessage(0,SavePacket.class,SavePacket::encode,SavePacket::decode,SavePacket::handle);
+        CHANNEL.registerMessage(1,SyncPacket.class,SyncPacket::encode,SyncPacket::decode,SyncPacket::handle);
+        CHANNEL.registerMessage(2,TogglePacket.class,TogglePacket::encode,TogglePacket::decode,TogglePacket::handle);
+        CHANNEL.registerMessage(3,DeletePacket.class,DeletePacket::encode,DeletePacket::decode,DeletePacket::handle);
+        CHANNEL.registerMessage(4,OpenPacket.class,OpenPacket::encode,OpenPacket::decode,OpenPacket::handle);
     }
+    public static void openCreate(ServerPlayer p){CHANNEL.send(PacketDistributor.PLAYER.with(()->p),OpenPacket.create());}
+    public static void openEdit(ServerPlayer p,WaypointSavedData.Waypoint w){CHANNEL.send(PacketDistributor.PLAYER.with(()->p),OpenPacket.edit(w));}
+    public static void save(UUID id,String name,String dimension,double x,double y,double z,int color,String icon){CHANNEL.sendToServer(new SavePacket(id,name,dimension,x,y,z,color,icon));}
+    public static void toggle(UUID id){CHANNEL.sendToServer(new TogglePacket(id));}
+    public static void delete(UUID id){CHANNEL.sendToServer(new DeletePacket(id));}
+    public static void syncAll(List<WaypointSavedData.Waypoint> ws){sync(ws,PacketDistributor.ALL.noArg());}
+    public static void syncToPlayer(ServerPlayer p,List<WaypointSavedData.Waypoint> ws){sync(ws,PacketDistributor.PLAYER.with(()->p));}
+    private static void sync(List<WaypointSavedData.Waypoint> ws,PacketDistributor.PacketTarget target){CHANNEL.send(target,new SyncPacket(ws));}
 
-    public static void register() {
-        if (registered) {
-            return;
-        }
-
-        registered = true;
-
-        CHANNEL.registerMessage(
-                0,
-                CreateWaypointPacket.class,
-                CreateWaypointPacket::encode,
-                CreateWaypointPacket::decode,
-                CreateWaypointPacket::handle
-        );
-        CHANNEL.registerMessage(
-                1,
-                SyncWaypointsPacket.class,
-                SyncWaypointsPacket::encode,
-                SyncWaypointsPacket::decode,
-                SyncWaypointsPacket::handle
-        );
-        CHANNEL.registerMessage(
-                2,
-                DeleteWaypointPacket.class,
-                DeleteWaypointPacket::encode,
-                DeleteWaypointPacket::decode,
-                DeleteWaypointPacket::handle
-        );
+    private record SavePacket(UUID id,String name,String dimension,double x,double y,double z,int color,String icon){
+        static void encode(SavePacket p,FriendlyByteBuf b){b.writeBoolean(p.id!=null);if(p.id!=null)b.writeUUID(p.id);b.writeUtf(p.name,32);b.writeUtf(p.dimension,256);b.writeDouble(p.x);b.writeDouble(p.y);b.writeDouble(p.z);b.writeInt(p.color);b.writeUtf(p.icon,4);}
+        static SavePacket decode(FriendlyByteBuf b){return new SavePacket(b.readBoolean()?b.readUUID():null,b.readUtf(32),b.readUtf(256),b.readDouble(),b.readDouble(),b.readDouble(),b.readInt(),b.readUtf(4));}
+        static void handle(SavePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer pl=c.getSender();if(pl==null||!pl.hasPermissions(2))return;var d=WaypointSavedData.get(pl.getServer());Vec3 pos=new Vec3(p.x,p.y,p.z);WaypointSavedData.Waypoint w;if(p.id==null)w=d.add(pl.getUUID(),p.name,p.dimension,pos,p.color,p.icon);else{d.update(p.id,p.name,p.dimension,pos,p.color,p.icon);w=d.getById(p.id);}if(w!=null){syncAll(d.getWaypoints());pl.sendSystemMessage(net.minecraft.network.chat.Component.literal("Waypoint guardado: "+w.name()));}});c.setPacketHandled(true);}
     }
-
-    public static void create(
-            BlockPos blockPos,
-            String dimension,
-            String name,
-            int color
-    ) {
-        CHANNEL.sendToServer(
-                new CreateWaypointPacket(
-                        blockPos,
-                        dimension,
-                        name,
-                        color
-                )
-        );
+    private record TogglePacket(UUID id){
+        static void encode(TogglePacket p,FriendlyByteBuf b){b.writeUUID(p.id);}static TogglePacket decode(FriendlyByteBuf b){return new TogglePacket(b.readUUID());}
+        static void handle(TogglePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer pl=c.getSender();if(pl==null||!pl.hasPermissions(2))return;var d=WaypointSavedData.get(pl.getServer());var w=d.getById(p.id);if(w!=null){d.setVisible(w.id(),!w.visible());syncAll(d.getWaypoints());}});c.setPacketHandled(true);}
     }
-
-    public static void delete(UUID waypointId) {
-        CHANNEL.sendToServer(new DeleteWaypointPacket(waypointId));
+    private record DeletePacket(UUID id){
+        static void encode(DeletePacket p,FriendlyByteBuf b){b.writeUUID(p.id);}static DeletePacket decode(FriendlyByteBuf b){return new DeletePacket(b.readUUID());}
+        static void handle(DeletePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer pl=c.getSender();if(pl==null||!pl.hasPermissions(2))return;var d=WaypointSavedData.get(pl.getServer());if(d.removeById(p.id))syncAll(d.getWaypoints());});c.setPacketHandled(true);}
     }
-
-    public static void syncAll(List<WaypointSavedData.Waypoint> waypoints) {
-        sendSyncPackets(waypoints, PacketDistributor.ALL.noArg());
+    private static class SyncPacket{
+        final List<WaypointSavedData.Waypoint> list;SyncPacket(List<WaypointSavedData.Waypoint> l){list=List.copyOf(l);}
+        static void encode(SyncPacket p,FriendlyByteBuf b){b.writeVarInt(p.list.size());for(var w:p.list){b.writeUUID(w.id());b.writeUUID(w.owner());b.writeUtf(w.name(),32);b.writeUtf(w.dimension(),256);b.writeDouble(w.x());b.writeDouble(w.y());b.writeDouble(w.z());b.writeInt(w.color());b.writeByte(w.shape());b.writeBoolean(w.visible());b.writeUtf(w.icon(),4);}}
+        static SyncPacket decode(FriendlyByteBuf b){int n=b.readVarInt();if(n<0||n>512)throw new IllegalArgumentException("Cantidad inválida");List<WaypointSavedData.Waypoint> l=new ArrayList<>();for(int i=0;i<n;i++)l.add(new WaypointSavedData.Waypoint(b.readUUID(),b.readUUID(),b.readUtf(32),b.readUtf(256),b.readDouble(),b.readDouble(),b.readDouble(),b.readInt()&0xFFFFFF,b.readByte(),b.readBoolean(),b.readUtf(4)));return new SyncPacket(l);}
+        static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->WaypointClientData.setWaypoints(p.list)));c.setPacketHandled(true);}
     }
-
-    public static void syncToPlayer(
-            ServerPlayer player,
-            List<WaypointSavedData.Waypoint> waypoints
-    ) {
-        sendSyncPackets(
-                waypoints,
-                PacketDistributor.PLAYER.with(() -> player)
-        );
-    }
-
-    private static void sendSyncPackets(
-            List<WaypointSavedData.Waypoint> waypoints,
-            net.minecraftforge.network.PacketDistributor.PacketTarget target
-    ) {
-        int packetCount = Math.max(
-                1,
-                (waypoints.size() + MAX_WAYPOINTS_PER_PACKET - 1)
-                        / MAX_WAYPOINTS_PER_PACKET
-        );
-
-        for (int packetIndex = 0; packetIndex < packetCount; packetIndex++) {
-            int start = packetIndex * MAX_WAYPOINTS_PER_PACKET;
-            int end = Math.min(
-                    waypoints.size(),
-                    start + MAX_WAYPOINTS_PER_PACKET
-            );
-
-            CHANNEL.send(
-                    target,
-                    new SyncWaypointsPacket(
-                            waypoints.subList(start, end),
-                            packetIndex == 0
-                    )
-            );
-        }
-    }
-
-    private record CreateWaypointPacket(
-            BlockPos blockPos,
-            String dimension,
-            String name,
-            int color
-    ) {
-        private static void encode(
-                CreateWaypointPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            buffer.writeBlockPos(packet.blockPos);
-            buffer.writeUtf(packet.dimension, 256);
-            buffer.writeUtf(packet.name, 128);
-            buffer.writeInt(packet.color);
-        }
-
-        private static CreateWaypointPacket decode(FriendlyByteBuf buffer) {
-            return new CreateWaypointPacket(
-                    buffer.readBlockPos(),
-                    buffer.readUtf(256),
-                    buffer.readUtf(128),
-                    buffer.readInt()
-            );
-        }
-
-        private static void handle(
-                CreateWaypointPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) {
-                    return;
-                }
-
-                String cleanName = WaypointSavedData.sanitizeName(packet.name);
-                if (cleanName.length() > 32
-                        || !player.getMainHandItem().is(ModItems.WAYPOINT_WAND.get())
-                        || !player.level().dimension().location().toString()
-                                .equals(packet.dimension)
-                        || !player.serverLevel().getWorldBorder()
-                                .isWithinBounds(packet.blockPos)
-                        || packet.blockPos.getY()
-                                < player.serverLevel().getMinBuildHeight()
-                        || packet.blockPos.getY()
-                                >= player.serverLevel().getMaxBuildHeight() - 4
-                        || player.distanceToSqr(
-                                Vec3.atCenterOf(packet.blockPos)
-                        ) > 256.0) {
-                    player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal(
-                                    "No se pudo crear el waypoint: revisa el nombre, el objeto y que sigas cerca del lugar."
-                            ),
-                            true
-                    );
-                    return;
-                }
-
-                WaypointSavedData data =
-                        WaypointSavedData.get(player.getServer());
-                Vec3 markerPosition = new Vec3(
-                        packet.blockPos.getX() + 0.5,
-                        packet.blockPos.getY() + 4.0,
-                        packet.blockPos.getZ() + 0.5
-                );
-
-                WaypointSavedData.Waypoint waypoint = data.add(
-                        player.getUUID(),
-                        cleanName,
-                        packet.dimension,
-                        markerPosition,
-                        packet.color
-                );
-
-                if (waypoint == null) {
-                    player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal(
-                                    "No se pudo guardar el waypoint."
-                            ),
-                            true
-                    );
-                    return;
-                }
-
-                syncAll(data.getWaypoints());
-                player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal(
-                                waypoint.name().isBlank()
-                                        ? "Waypoint creado."
-                                        : "Waypoint '" + waypoint.name() + "' creado."
-                        ),
-                        true
-                );
-            });
-            context.setPacketHandled(true);
-        }
-    }
-
-    private record DeleteWaypointPacket(UUID waypointId) {
-        private static void encode(
-                DeleteWaypointPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            buffer.writeUUID(packet.waypointId);
-        }
-
-        private static DeleteWaypointPacket decode(FriendlyByteBuf buffer) {
-            return new DeleteWaypointPacket(buffer.readUUID());
-        }
-
-        private static void handle(
-                DeleteWaypointPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-            context.enqueueWork(() -> {
-                ServerPlayer player = context.getSender();
-                if (player == null) {
-                    return;
-                }
-
-                if (!player.getMainHandItem().is(ModItems.WAYPOINT_WAND.get())) {
-                    player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal(
-                                    "Equipa la varita de waypoints para borrarlo."
-                            ),
-                            true
-                    );
-                    return;
-                }
-
-                WaypointSavedData data =
-                        WaypointSavedData.get(player.getServer());
-                WaypointSavedData.Waypoint waypoint = data.getWaypoints()
-                        .stream()
-                        .filter(candidate ->
-                                candidate.id().equals(packet.waypointId))
-                        .findFirst()
-                        .orElse(null);
-
-                if (waypoint == null
-                        || !waypoint.dimension().equals(
-                                player.level().dimension().location().toString()
-                        )
-                        || player.distanceToSqr(
-                                new Vec3(
-                                        waypoint.x(),
-                                        waypoint.y(),
-                                        waypoint.z()
-                                )
-                        ) > 512.0 * 512.0) {
-                    player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal(
-                                    "No se encontró un waypoint alcanzable."
-                            ),
-                            true
-                    );
-                    return;
-                }
-
-                WaypointSavedData.Waypoint removed = data.removeById(
-                        packet.waypointId,
-                        player.getUUID(),
-                        player.hasPermissions(2),
-                        waypoint.dimension()
-                );
-
-                if (removed == null) {
-                    player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal(
-                                    "No hay un waypoint tuyo cerca de ese bloque."
-                            ),
-                            true
-                    );
-                    return;
-                }
-
-                syncAll(data.getWaypoints());
-                player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal(
-                                "Waypoint '" + removed.name() + "' eliminado."
-                        ),
-                        true
-                );
-            });
-            context.setPacketHandled(true);
-        }
-    }
-
-    private record SyncWaypointsPacket(
-            List<WaypointSavedData.Waypoint> waypoints,
-            boolean startsBatch
-    ) {
-        private SyncWaypointsPacket {
-            waypoints = List.copyOf(waypoints);
-        }
-
-        private static void encode(
-                SyncWaypointsPacket packet,
-                FriendlyByteBuf buffer
-        ) {
-            buffer.writeBoolean(packet.startsBatch);
-            buffer.writeVarInt(packet.waypoints.size());
-
-            for (WaypointSavedData.Waypoint waypoint : packet.waypoints) {
-                buffer.writeUUID(waypoint.id());
-                buffer.writeUUID(waypoint.owner());
-                buffer.writeUtf(waypoint.name(), 32);
-                buffer.writeUtf(waypoint.dimension(), 256);
-                buffer.writeDouble(waypoint.x());
-                buffer.writeDouble(waypoint.y());
-                buffer.writeDouble(waypoint.z());
-                buffer.writeInt(waypoint.color());
-                buffer.writeByte(waypoint.shape());
-                buffer.writeBoolean(waypoint.visible());
-            }
-        }
-
-        private static SyncWaypointsPacket decode(FriendlyByteBuf buffer) {
-            boolean startsBatch = buffer.readBoolean();
-            int count = buffer.readVarInt();
-
-            if (count < 0 || count > MAX_WAYPOINTS_PER_PACKET) {
-                throw new IllegalArgumentException(
-                        "Cantidad de waypoints sincronizados no válida: " + count
-                );
-            }
-
-            List<WaypointSavedData.Waypoint> waypoints =
-                    new ArrayList<>(count);
-
-            for (int i = 0; i < count; i++) {
-                waypoints.add(new WaypointSavedData.Waypoint(
-                        buffer.readUUID(),
-                        buffer.readUUID(),
-                        buffer.readUtf(32),
-                        buffer.readUtf(256),
-                        buffer.readDouble(),
-                        buffer.readDouble(),
-                        buffer.readDouble(),
-                        buffer.readInt() & 0xFFFFFF,
-                        buffer.readByte(),
-                        buffer.readBoolean()
-                ));
-            }
-
-            return new SyncWaypointsPacket(waypoints, startsBatch);
-        }
-
-        private static void handle(
-                SyncWaypointsPacket packet,
-                Supplier<NetworkEvent.Context> contextSupplier
-        ) {
-            NetworkEvent.Context context = contextSupplier.get();
-            context.enqueueWork(() ->
-                    DistExecutor.unsafeRunWhenOn(
-                            Dist.CLIENT,
-                            () -> () -> {
-                                if (packet.startsBatch) {
-                                    WaypointClientData.setWaypoints(
-                                            packet.waypoints
-                                    );
-                                } else {
-                                    WaypointClientData.appendWaypoints(
-                                            packet.waypoints
-                                    );
-                                }
-                            }
-                    )
-            );
-            context.setPacketHandled(true);
-        }
+    private record OpenPacket(boolean edit,UUID id,String name,String dimension,double x,double y,double z,int color,String icon){
+        static OpenPacket create(){return new OpenPacket(false,null,"", "",0,0,0,0x40D8FF,"◆");}
+        static OpenPacket edit(WaypointSavedData.Waypoint w){return new OpenPacket(true,w.id(),w.name(),w.dimension(),w.x(),w.y(),w.z(),w.color(),w.icon());}
+        static void encode(OpenPacket p,FriendlyByteBuf b){b.writeBoolean(p.edit);b.writeBoolean(p.id!=null);if(p.id!=null)b.writeUUID(p.id);b.writeUtf(p.name,32);b.writeUtf(p.dimension,256);b.writeDouble(p.x);b.writeDouble(p.y);b.writeDouble(p.z);b.writeInt(p.color);b.writeUtf(p.icon,4);}
+        static OpenPacket decode(FriendlyByteBuf b){return new OpenPacket(b.readBoolean(),b.readBoolean()?b.readUUID():null,b.readUtf(32),b.readUtf(256),b.readDouble(),b.readDouble(),b.readDouble(),b.readInt(),b.readUtf(4));}
+        static void handle(OpenPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->net.minecraft.client.Minecraft.getInstance().setScreen(new WaypointScreen(p.id,p.name,p.dimension,p.x,p.y,p.z,p.color,p.icon))));c.setPacketHandled(true);}
     }
 }
