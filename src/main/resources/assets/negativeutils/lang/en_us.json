@@ -1,7 +1,9 @@
 {
   "item.negativeutils.trail_wand": "Trail Wand",
-  "item.negativeutils.waypoint_wand": "Waypoint Wand",
   "item.negativeutils.respawn_wand": "PALITOMAGICO",
-  "block.negativeutils.command_sequence": "Command Sequence Block",
+  "block.negativeutils.time_delay": "Time Block",
+  "block.negativeutils.command_sequence": "Sequence Block",
+  "item.negativeutils.time_delay": "Time Block",
+  "item.negativeutils.command_sequence": "Sequence Block",
   "itemGroup.negativeutils": "NegativeUtils"
 }
