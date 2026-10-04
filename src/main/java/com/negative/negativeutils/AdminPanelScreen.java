@@ -72,6 +72,7 @@ public class AdminPanelScreen extends Screen {
     private void toggle(){if(selected>=0&&selected<entries.size())CountdownNetwork.toggleCountdown(entries.get(selected).id());else setStatus("Selecciona un contador.",0xFFAA55);}
     private void remove(){if(selected>=0&&selected<entries.size())CountdownNetwork.deleteCountdown(entries.get(selected).id());else setStatus("Selecciona un contador.",0xFFAA55);}
     private void setStatus(String s,int c){status=Component.literal(s);statusColor=c;}
+    public void refreshData(){ entries.clear(); entries.addAll(CountdownClientData.getAll()); buildWidgets(); }
     @Override public void render(GuiGraphics g,int mx,int my,float pt){
         renderBackground(g);NegativeUtilsGuiStyle.renderFrame(g,width,height);
         g.drawCenteredString(font,title,width/2,10,0xFFFFFF);
