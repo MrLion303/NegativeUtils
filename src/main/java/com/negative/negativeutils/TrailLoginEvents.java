@@ -20,7 +20,7 @@ public final class TrailLoginEvents {
         }
 
         TrailSavedData data = TrailSavedData.get(player.getServer());
-        TrailNetwork.sendToPlayer(player, data.getTrails());
+        TrailNetwork.syncToPlayer(player, data.getTrails());
     }
 
     @SubscribeEvent
