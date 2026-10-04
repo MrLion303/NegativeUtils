@@ -1,97 +1,19 @@
 package com.negative.negativeutils;
 
+import java.util.List;
+import java.util.UUID;
+
 public final class CountdownClientData {
-    private static boolean configured;
-    private static boolean running;
-    private static boolean finished;
-    private static long endTimeMillis;
-    private static long pausedRemainingMillis;
-
-    private static String displayText = "";
-    private static int displayColor = 0xFFFFFF;
-    private static String displayPosition = "BOSSBAR";
-
-    private CountdownClientData() {
-    }
-
-    public static void update(
-            boolean newConfigured,
-            boolean newRunning,
-            boolean newFinished,
-            long newEndTimeMillis,
-            long newPausedRemainingMillis
-    ) {
-        update(
-                newConfigured,
-                newRunning,
-                newFinished,
-                newEndTimeMillis,
-                newPausedRemainingMillis,
-                "",
-                0xFFFFFF,
-                "BOSSBAR"
-        );
-    }
-
-    public static void update(
-            boolean newConfigured,
-            boolean newRunning,
-            boolean newFinished,
-            long newEndTimeMillis,
-            long newPausedRemainingMillis,
-            String newDisplayText,
-            int newDisplayColor,
-            String newDisplayPosition
-    ) {
-        configured = newConfigured;
-        running = newRunning;
-        finished = newFinished;
-        endTimeMillis = newEndTimeMillis;
-        pausedRemainingMillis = newPausedRemainingMillis;
-        displayText = newDisplayText == null ? "" : newDisplayText;
-        displayColor = newDisplayColor & 0xFFFFFF;
-        displayPosition = newDisplayPosition == null
-                ? "BOSSBAR"
-                : newDisplayPosition;
-    }
-
-    public static boolean isConfigured() {
-        return configured;
-    }
-
-    public static boolean isRunning() {
-        return running;
-    }
-
-    public static boolean isFinished() {
-        return finished;
-    }
-
-    public static long getEndTimeMillis() {
-        return endTimeMillis;
-    }
-
-    public static long getRemainingMillis() {
-        if (!configured || finished) {
-            return 0;
+    private static List<Entry> countdowns = List.of();
+    private CountdownClientData() {}
+    public static void set(List<Entry> entries) { countdowns = List.copyOf(entries); }
+    public static List<Entry> getAll() { return countdowns; }
+    public record Entry(UUID id, String name, boolean running, boolean finished,
+                        long endTimeMillis, long pausedRemainingMillis,
+                        String displayText, int displayColor, String displayPosition) {
+        public long remainingMillis() {
+            if (finished) return 0;
+            return running ? Math.max(0, endTimeMillis-System.currentTimeMillis()) : Math.max(0, pausedRemainingMillis);
         }
-
-        if (running) {
-            return Math.max(0, endTimeMillis - System.currentTimeMillis());
-        }
-
-        return Math.max(0, pausedRemainingMillis);
-    }
-
-    public static String getDisplayText() {
-        return displayText;
-    }
-
-    public static int getDisplayColor() {
-        return displayColor;
-    }
-
-    public static String getDisplayPosition() {
-        return displayPosition;
     }
 }
