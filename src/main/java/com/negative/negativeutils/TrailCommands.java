@@ -3,6 +3,7 @@ package com.negative.negativeutils;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -27,6 +28,15 @@ public final class TrailCommands {
                                         .then(Commands.argument(
                                                 "nombre",
                                                 StringArgumentType.string()
+                                        ).suggests((context, builder) ->
+                                                SharedSuggestionProvider.suggest(
+                                                        TrailSavedData.get(context.getSource().getServer())
+                                                                .getTrails()
+                                                                .stream()
+                                                                .map(TrailSavedData.Trail::name)
+                                                                .toList(),
+                                                        builder
+                                                )
                                         ).executes(context -> {
                                             String name = StringArgumentType.getString(
                                                     context, "nombre"
