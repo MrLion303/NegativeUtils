@@ -17,10 +17,13 @@ import net.minecraftforge.fml.common.Mod;
         value = Dist.CLIENT,
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
-public class TrailRenderer {
+public final class TrailRenderer {
     private static final double FOOTPRINT_SPACING = 0.65;
     private static final double SIDE_OFFSET = 0.14;
     private static final double HEIGHT_OFFSET = 0.015;
+
+    private TrailRenderer() {
+    }
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -29,55 +32,48 @@ public class TrailRenderer {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-
-        if (minecraft.level == null
-                || minecraft.player == null
-                || !TrailClientState.isVisible()) {
+        if (minecraft.level == null || minecraft.player == null) {
             return;
         }
 
-        var points = TrailClientData.getPoints();
-
-        if (points.size() < 2) {
-            return;
-        }
-
-        String currentDimension =
-                minecraft.level.dimension().location().toString();
-
+        String dimension = minecraft.level.dimension().location().toString();
         PoseStack poseStack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
+        MultiBufferSource.BufferSource buffers =
+                minecraft.renderBuffers().bufferSource();
 
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
 
-        MultiBufferSource.BufferSource buffers =
-                minecraft.renderBuffers().bufferSource();
-        int color = TrailClientData.getAlpha() << 24
-                | TrailClientData.getRed() << 16
-                | TrailClientData.getGreen() << 8
-                | TrailClientData.getBlue();
-
-        for (int i = 0; i < points.size() - 1; i++) {
-            var first = points.get(i);
-            var second = points.get(i + 1);
-
-            if (!first.dimension().equals(second.dimension())
-                    || !currentDimension.equals(first.dimension())) {
+        for (TrailSavedData.Trail trail : TrailClientData.getTrails()) {
+            if (!trail.visible() || trail.points().size() < 2) {
                 continue;
             }
 
-            Vec3 start = new Vec3(first.x(), first.y(), first.z());
-            Vec3 end = new Vec3(second.x(), second.y(), second.z());
+            int color = trail.opacity() << 24
+                    | trail.red() << 16
+                    | trail.green() << 8
+                    | trail.blue();
 
-            drawFootprints(
-                    poseStack,
-                    buffers,
-                    minecraft.font,
-                    start,
-                    end,
-                    color
-            );
+            var points = trail.points();
+            for (int i = 0; i < points.size() - 1; i++) {
+                var first = points.get(i);
+                var second = points.get(i + 1);
+
+                if (!first.dimension().equals(second.dimension())
+                        || !dimension.equals(first.dimension())) {
+                    continue;
+                }
+
+                drawFootprints(
+                        poseStack,
+                        buffers,
+                        minecraft.font,
+                        new Vec3(first.x(), first.y(), first.z()),
+                        new Vec3(second.x(), second.y(), second.z()),
+                        color
+                );
+            }
         }
 
         buffers.endBatch();
@@ -105,7 +101,10 @@ public class TrailRenderer {
         int count = Math.max(1, (int) Math.floor(length / FOOTPRINT_SPACING));
 
         for (int i = 0; i <= count; i++) {
-            double progress = Math.min(1.0, i * FOOTPRINT_SPACING / length);
+            double progress = Math.min(
+                    1.0,
+                    i * FOOTPRINT_SPACING / length
+            );
 
             double x = start.x + dx * progress;
             double y = start.y + (end.y - start.y) * progress + HEIGHT_OFFSET;
@@ -116,7 +115,6 @@ public class TrailRenderer {
             z += sideZ * side;
 
             double rotation = (i % 2 == 0) ? 0.20 : -0.20;
-
             drawFootprint(
                     poseStack,
                     buffers,
