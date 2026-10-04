@@ -13,7 +13,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(
-        modid = EnciclopediaMod.MOD_ID,
+        modid = NegativeUtilsMod.MOD_ID,
         value = net.minecraftforge.api.distmarker.Dist.CLIENT,
         bus = Mod.EventBusSubscriber.Bus.MOD
 )
