@@ -25,7 +25,7 @@ public final class WaypointCommands {
             .then(Commands.literal("lista").executes(c->{var ws=WaypointSavedData.get(c.getSource().getServer()).getWaypoints();if(ws.isEmpty())c.getSource().sendSuccess(()->Component.literal("No hay waypoints."),false);for(var w:ws)c.getSource().sendSuccess(()->Component.literal(w.name()+" | "+(w.visible()?"visible":"oculto")+" | "+w.dimension()+" | "+Math.round(w.x())+", "+Math.round(w.y())+", "+Math.round(w.z())),false);return Command.SINGLE_SUCCESS;}))
             .then(Commands.literal("clear").executes(c->{var d=WaypointSavedData.get(c.getSource().getServer());int n=d.removeAll();WaypointNetwork.syncAll(d.getWaypoints());c.getSource().sendSuccess(()->Component.literal("Se eliminaron "+n+" waypoints."),true);return Command.SINGLE_SUCCESS;}))));
     }
-    private static CompletableFuture<com.mojang.brigadier.suggestions.Suggestions> suggest(com.mojang.brigadier.context.CommandContext<CommandSourceStack> c,com.mojang.brigadier.suggestions.SuggestionsBuilder b){
+    private static CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggest(com.mojang.brigadier.context.CommandContext<CommandSourceStack> c,com.mojang.brigadier.suggestion.SuggestionsBuilder b){
         return SharedSuggestionProvider.suggest(WaypointSavedData.get(c.getSource().getServer()).getWaypoints().stream().map(WaypointSavedData.Waypoint::name).toList(),b);
     }
     private static int setVisible(com.mojang.brigadier.context.CommandContext<CommandSourceStack> c,boolean visible){
