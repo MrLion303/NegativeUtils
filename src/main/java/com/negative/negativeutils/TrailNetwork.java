@@ -181,7 +181,7 @@ public final class TrailNetwork {
             buffer.writeByte(packet.red);
             buffer.writeByte(packet.green);
             buffer.writeByte(packet.blue);
-            buffer.writeByte(opacityPercent);
+            buffer.writeByte(packet.opacityPercent);
         }
 
         private static SaveSettingsPacket decode(FriendlyByteBuf buffer) {
