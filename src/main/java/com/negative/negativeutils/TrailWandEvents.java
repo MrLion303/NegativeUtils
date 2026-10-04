@@ -2,6 +2,7 @@ package com.negative.negativeutils;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -11,71 +12,114 @@ import net.minecraftforge.fml.common.Mod;
         modid = "negativeutils",
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
-public class TrailWandEvents {
+public final class TrailWandEvents {
+    private TrailWandEvents() {
+    }
 
     @SubscribeEvent
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        var player = event.getEntity();
-
-        if (!player.getMainHandItem().is(ModItems.TRAIL_WAND.get())) {
+    public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        if (!event.getItemStack().is(ModItems.TRAIL_WAND.get())) {
             return;
         }
 
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
 
-        if (!player.hasPermissions(2) || event.getLevel().isClientSide()) {
+        if (event.getLevel().isClientSide()
+                || !(event.getEntity() instanceof ServerPlayer player)
+                || !player.hasPermissions(2)) {
             return;
         }
 
         ServerLevel level = (ServerLevel) event.getLevel();
         TrailSavedData data = TrailSavedData.get(level.getServer());
-        var pos = event.getPos();
 
-        data.addPoint(level, pos.getX(), pos.getY(), pos.getZ());
+        UUIDSelection:
+        {
+            java.util.UUID selected = TrailSelectionState.get(player.getUUID());
+            TrailSavedData.Trail trail = selected == null ? null : data.getById(selected);
 
-        TrailNetwork.sendToAll(data.getPoints());
+            if (trail == null) {
+                trail = data.create(data.nextAutomaticName());
+                if (trail == null) {
+                    player.displayClientMessage(
+                            Component.literal("No se pudo crear el sendero."),
+                            true
+                    );
+                    return;
+                }
+                TrailSelectionState.select(player.getUUID(), trail.id());
+                player.displayClientMessage(
+                        Component.literal(
+                                "Sendero '" + trail.name()
+                                        + "' creado y seleccionado."
+                        ),
+                        true
+                );
+            }
 
-        player.displayClientMessage(
-                Component.literal("Punto añadido al camino (" + data.getPoints().size() + ")"),
-                true
-        );
+            data.resetPoints(
+                    trail.id(),
+                    level,
+                    event.getPos().getX(),
+                    event.getPos().getY(),
+                    event.getPos().getZ()
+            );
+            TrailNetwork.syncAll(data.getTrails());
+
+            player.displayClientMessage(
+                    Component.literal(
+                            "Punto A marcado en '" + trail.name()
+                                    + "'. Clic derecho para añadir los siguientes puntos."
+                    ),
+                    true
+            );
+        }
     }
 
     @SubscribeEvent
-    public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
-        var player = event.getEntity();
-
-        if (!player.getMainHandItem().is(ModItems.TRAIL_WAND.get())) {
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (!event.getItemStack().is(ModItems.TRAIL_WAND.get())) {
             return;
         }
 
         event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.SUCCESS);
 
-        if (!player.hasPermissions(2) || event.getLevel().isClientSide()) {
+        if (event.getLevel().isClientSide()
+                || !(event.getEntity() instanceof ServerPlayer player)
+                || !player.hasPermissions(2)) {
             return;
         }
 
         ServerLevel level = (ServerLevel) event.getLevel();
         TrailSavedData data = TrailSavedData.get(level.getServer());
-        var pos = event.getPos();
+        java.util.UUID selected = TrailSelectionState.get(player.getUUID());
+        TrailSavedData.Trail trail = selected == null ? null : data.getById(selected);
 
-        boolean removed = data.removeNearestPoint(
-                level,
-                pos.getX(),
-                pos.getY(),
-                pos.getZ()
-        );
-
-        if (removed) {
-            TrailNetwork.sendToAll(data.getPoints());
+        if (trail == null) {
+            player.displayClientMessage(
+                    Component.literal(
+                            "Primero crea o selecciona un sendero."
+                    ),
+                    true
+            );
+            return;
         }
+
+        data.addPoint(
+                trail.id(),
+                level,
+                event.getPos().getX(),
+                event.getPos().getY(),
+                event.getPos().getZ()
+        );
+        TrailNetwork.syncAll(data.getTrails());
 
         player.displayClientMessage(
                 Component.literal(
-                        removed
-                                ? "Punto eliminado del camino"
-                                : "No hay un punto del camino cerca"
+                        "Punto añadido a '" + trail.name()
+                                + "' (" + trail.points().size() + ")."
                 ),
                 true
         );
