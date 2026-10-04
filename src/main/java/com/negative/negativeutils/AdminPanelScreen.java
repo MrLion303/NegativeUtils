@@ -66,19 +66,19 @@ public class AdminPanelScreen extends Screen {
                     }).bounds(left, 58 + i * 23, 150, 20).build());
         }
 
-        nameInput = field(right, 30, 155, "Nombre del contador", 32);
+        nameInput = field(right, 26, 155, "Nombre del contador", 32);
         int dateWidth = 43;
         int dateGap = 4;
         int dateStart = right + 1;
-        dayInput = numberField(dateStart, 64, dateWidth, 2);
-        monthInput = numberField(dateStart + dateWidth + dateGap, 64, dateWidth, 2);
-        yearInput = numberField(dateStart + (dateWidth + dateGap) * 2, 64, dateWidth + 7, 4);
-        hourInput = numberField(dateStart, 95, dateWidth, 2);
-        minuteInput = numberField(dateStart + dateWidth + dateGap, 95, dateWidth, 2);
-        secondInput = numberField(dateStart + (dateWidth + dateGap) * 2, 95, dateWidth + 7, 2);
+        dayInput = numberField(dateStart, 56, dateWidth, 2);
+        monthInput = numberField(dateStart + dateWidth + dateGap, 56, dateWidth, 2);
+        yearInput = numberField(dateStart + (dateWidth + dateGap) * 2, 56, dateWidth + 7, 4);
+        hourInput = numberField(dateStart, 85, dateWidth, 2);
+        minuteInput = numberField(dateStart + dateWidth + dateGap, 85, dateWidth, 2);
+        secondInput = numberField(dateStart + (dateWidth + dateGap) * 2, 85, dateWidth + 7, 2);
 
-        displayTextInput = field(right, 128, 155, "Texto debajo del contador", 100);
-        colorInput = field(right, 161, 88, "Color HEX", 6);
+        displayTextInput = field(right, 114, 155, "Texto debajo del contador", 100);
+        colorInput = field(right, 143, 88, "Color HEX", 6);
         colorInput.setValue("FFFFFF");
         colorInput.setFilter(text -> text.length() <= 6
                 && text.chars().allMatch(character -> Character.digit(character, 16) >= 0));
@@ -94,11 +94,11 @@ public class AdminPanelScreen extends Screen {
         addRenderableWidget(colorInput);
 
         addRenderableWidget(Button.builder(Component.literal("Elegir color"), button -> openColorPicker())
-                .bounds(right + 92, 161, 63, 20).build());
+                .bounds(right + 92, 143, 63, 20).build());
         addRenderableWidget(Button.builder(Component.literal(POSITION_LABELS[selectedPosition]), button -> {
             selectedPosition = (selectedPosition + 1) % POSITIONS.length;
             button.setMessage(Component.literal(POSITION_LABELS[selectedPosition]));
-        }).bounds(right, 185, 155, 20).build());
+        }).bounds(right, 166, 155, 20).build());
 
         int actionY = height - 49;
         addRenderableWidget(Button.builder(Component.literal("Guardar"), button -> saveCountdown())
@@ -351,10 +351,10 @@ public class AdminPanelScreen extends Screen {
         int right = width / 2 + 15;
         graphics.drawString(font, "Contadores", left, 22, 0xFFFFFF);
         graphics.drawString(font, "Editor", right, 21, 0xFFFFFF);
-        graphics.drawString(font, "Fecha UTC: día / mes / año", right, 53, 0xFFFFFF);
-        graphics.drawString(font, "Hora UTC: h / min / seg", right, 84, 0xFFFFFF);
-        graphics.drawString(font, "Texto debajo del contador", right, 118, 0xFFFFFF);
-        graphics.drawString(font, "Color", right, 151, 0xFFFFFF);
+        graphics.drawString(font, "Fecha UTC: día / mes / año", right, 47, 0xFFFFFF);
+        graphics.drawString(font, "Hora UTC: h / min / seg", right, 76, 0xFFFFFF);
+        graphics.drawString(font, "Texto debajo del contador", right, 105, 0xFFFFFF);
+        graphics.drawString(font, "Color", right, 134, 0xFFFFFF);
 
         if (colorPickerOpen) renderColorWheel(graphics);
     }
