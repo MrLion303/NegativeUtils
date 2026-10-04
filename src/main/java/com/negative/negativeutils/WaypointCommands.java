@@ -46,6 +46,15 @@ public final class WaypointCommands {
                                                 .then(Commands.argument(
                                                         "nombre",
                                                         StringArgumentType.string()
+                                                ).suggests((context, builder) ->
+                                                        SharedSuggestionProvider.suggest(
+                                                                WaypointSavedData.get(context.getSource().getServer())
+                                                                        .getWaypoints()
+                                                                        .stream()
+                                                                        .map(WaypointSavedData.Waypoint::name)
+                                                                        .toList(),
+                                                                builder
+                                                        )
                                                 ).executes(context ->
                                                         setVisible(context.getSource(), context.getArgument("nombre", String.class), false)
                                                 )))
