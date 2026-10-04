@@ -21,7 +21,6 @@ public final class EnciclopediaMod {
         TimeDelayNetwork.register();
         WaypointNetwork.register();
         CommandSequenceNetwork.register();
-        CountdownNetwork.Registration.registerChannel();
         DiscordEmoteNetwork.register();
     }
 }
