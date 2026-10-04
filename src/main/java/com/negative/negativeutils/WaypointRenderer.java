@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Mod.EventBusSubscriber(
-        modid = EnciclopediaMod.MOD_ID,
+        modid = "negativeutils",
         value = Dist.CLIENT,
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
@@ -45,6 +45,7 @@ public final class WaypointRenderer {
         String dimension = minecraft.level.dimension().location().toString();
         List<WaypointSavedData.Waypoint> waypoints =
                 WaypointClientData.getWaypoints().stream()
+                        .filter(WaypointSavedData.Waypoint::visible)
                         .filter(waypoint -> waypoint.dimension().equals(dimension))
                         .sorted(Comparator.comparingDouble(waypoint ->
                                 minecraft.player.position().distanceToSqr(
@@ -55,6 +56,7 @@ public final class WaypointRenderer {
                                         )
                                 )))
                         .toList();
+
         if (waypoints.isEmpty()) {
             return;
         }
@@ -64,6 +66,7 @@ public final class WaypointRenderer {
         int x = 8;
         int y = 8;
         int shown = Math.min(waypoints.size(), 8);
+
         for (int index = 0; index < shown; index++) {
             WaypointSavedData.Waypoint waypoint = waypoints.get(index);
             double distance = minecraft.player.position().distanceTo(
@@ -74,7 +77,15 @@ public final class WaypointRenderer {
                     font.width(waypoint.name()),
                     font.width(distanceLabel)
             ) + 18;
-            graphics.fill(x - 3, y - 2, x + rowWidth, y + 34, 0x90000000);
+
+            graphics.fill(
+                    x - 3,
+                    y - 2,
+                    x + rowWidth,
+                    y + 34,
+                    0x90000000
+            );
+
             if (!waypoint.name().isBlank()) {
                 graphics.drawString(
                         font,
@@ -85,12 +96,14 @@ public final class WaypointRenderer {
                         true
                 );
             }
+
             drawHudMarker(
                     graphics,
                     x,
                     y + 12,
                     0xFF000000 | waypoint.color()
             );
+
             graphics.drawString(
                     font,
                     distanceLabel,
@@ -143,20 +156,28 @@ public final class WaypointRenderer {
 
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
+
         for (WaypointSavedData.Waypoint waypoint
                 : WaypointClientData.getWaypoints()) {
-            if (!waypoint.dimension().equals(dimension)) {
+            if (!waypoint.visible()
+                    || !waypoint.dimension().equals(dimension)) {
                 continue;
             }
 
-            Vec3 anchor = new Vec3(waypoint.x(), waypoint.y(), waypoint.z());
+            Vec3 anchor = new Vec3(
+                    waypoint.x(),
+                    waypoint.y(),
+                    waypoint.z()
+            );
             double distance = minecraft.player.position().distanceTo(anchor);
+
             if (distance > MAX_RENDER_DISTANCE) {
                 continue;
             }
 
             float yaw = horizontalFacingYaw(anchor, camera);
             int color = 0xFF000000 | waypoint.color();
+
             drawVerticalText(
                     minecraft.font,
                     buffers,
@@ -171,6 +192,7 @@ public final class WaypointRenderer {
                     Font.DisplayMode.NORMAL,
                     0
             );
+
             if (!waypoint.name().isBlank()) {
                 drawVerticalText(
                         minecraft.font,
@@ -187,6 +209,7 @@ public final class WaypointRenderer {
                         0
                 );
             }
+
             drawVerticalText(
                     minecraft.font,
                     buffers,
@@ -202,8 +225,18 @@ public final class WaypointRenderer {
                     0
             );
         }
+
         buffers.endBatch();
         poseStack.popPose();
+    }
+
+    private static float horizontalFacingYaw(
+            Vec3 waypointPosition,
+            Vec3 playerPosition
+    ) {
+        double dx = playerPosition.x - waypointPosition.x;
+        double dz = playerPosition.z - waypointPosition.z;
+        return (float) Math.toDegrees(Math.atan2(dx, dz));
     }
 
     private static void drawVerticalText(
@@ -237,14 +270,5 @@ public final class WaypointRenderer {
                 LightTexture.FULL_BRIGHT
         );
         poseStack.popPose();
-    }
-
-    private static float horizontalFacingYaw(
-            Vec3 waypointPosition,
-            Vec3 playerPosition
-    ) {
-        double dx = playerPosition.x - waypointPosition.x;
-        double dz = playerPosition.z - waypointPosition.z;
-        return (float) Math.toDegrees(Math.atan2(dx, dz));
     }
 }
