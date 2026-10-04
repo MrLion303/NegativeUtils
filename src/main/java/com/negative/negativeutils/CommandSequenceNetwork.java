@@ -18,7 +18,7 @@ public final class CommandSequenceNetwork {
     private static final SimpleChannel CHANNEL =
             NetworkRegistry.newSimpleChannel(
                     ResourceLocation.fromNamespaceAndPath(
-                            EnciclopediaMod.MOD_ID,
+                            "negativeutils",
                             "command_sequence"
                     ),
                     () -> PROTOCOL,
