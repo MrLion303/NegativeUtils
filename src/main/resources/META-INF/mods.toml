@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved to Negative Studios"
+
+[[mods]]
+modId="negativeutils"
+version="\${file.jarVersion}"
+displayName="NegativeUtils"
+authors="Negative Studios"
+description='''Pack de utilidades de Negative Studios para servidores y proyectos de Minecraft.'''
+
+[[dependencies.negativeutils]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.negativeutils]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
