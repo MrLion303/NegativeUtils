@@ -1,0 +1,7 @@
+{
+  "item.negativeutils.trail_wand": "Varita de ruta",
+  "item.negativeutils.waypoint_wand": "Varita de waypoints",
+  "item.negativeutils.respawn_wand": "PALITOMAGICO",
+  "block.negativeutils.command_sequence": "Bloque de secuencias",
+  "itemGroup.negativeutils": "NegativeUtils"
+}

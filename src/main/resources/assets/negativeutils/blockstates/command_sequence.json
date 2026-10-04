@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "negativeutils:block/command_sequence"
+    }
+  }
+}

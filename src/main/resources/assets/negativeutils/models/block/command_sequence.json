@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "minecraft:block/command_block_side",
+    "down": "minecraft:block/command_block_side",
+    "up": "minecraft:block/command_block_back",
+    "north": "minecraft:block/command_block_front",
+    "south": "minecraft:block/command_block_side",
+    "west": "minecraft:block/command_block_side",
+    "east": "minecraft:block/command_block_side"
+  }
+}

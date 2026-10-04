@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "negativeutils:block/time_delay"
+    }
+  }
+}
