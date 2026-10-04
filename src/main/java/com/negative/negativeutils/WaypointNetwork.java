@@ -61,6 +61,6 @@ public final class WaypointNetwork {
         static OpenPacket edit(WaypointSavedData.Waypoint w){return new OpenPacket(true,w.id(),w.name(),w.dimension(),w.x(),w.y(),w.z(),w.color(),w.icon());}
         static void encode(OpenPacket p,FriendlyByteBuf b){b.writeBoolean(p.edit);b.writeBoolean(p.id!=null);if(p.id!=null)b.writeUUID(p.id);b.writeUtf(p.name,32);b.writeUtf(p.dimension,256);b.writeDouble(p.x);b.writeDouble(p.y);b.writeDouble(p.z);b.writeInt(p.color);b.writeUtf(p.icon,4);}
         static OpenPacket decode(FriendlyByteBuf b){return new OpenPacket(b.readBoolean(),b.readBoolean()?b.readUUID():null,b.readUtf(32),b.readUtf(256),b.readDouble(),b.readDouble(),b.readDouble(),b.readInt(),b.readUtf(4));}
-        static void handle(OpenPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->net.minecraft.client.Minecraft.getInstance().setScreen(new WaypointScreen(p.id,p.name,p.dimension,p.x,p.y,p.z,p.color,p.icon))));c.setPacketHandled(true);}
+        static void handle(OpenPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->NegativeUtilsClientPacketHandler.openWaypointEditor(p.id,p.name,p.dimension,p.x,p.y,p.z,p.color,p.icon)));c.setPacketHandled(true);}
     }
 }
