@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 public final class DiscordEmoteClientData {
     public static final ResourceLocation EMOTE_FONT =
             ResourceLocation.fromNamespaceAndPath(
-                    EnciclopediaMod.MOD_ID,
+                    NegativeUtilsMod.MOD_ID,
                     "discord_emotes"
             );
     private static final Logger LOGGER = LogUtils.getLogger();
