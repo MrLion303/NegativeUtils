@@ -28,7 +28,7 @@ public final class WaypointNetwork {
         CHANNEL.registerMessage(3,DeletePacket.class,DeletePacket::encode,DeletePacket::decode,DeletePacket::handle);
         CHANNEL.registerMessage(4,OpenPacket.class,OpenPacket::encode,OpenPacket::decode,OpenPacket::handle);
     }
-    public static void openCreate(ServerPlayer p){CHANNEL.send(PacketDistributor.PLAYER.with(()->p),OpenPacket.create());}
+    public static void openCreate(ServerPlayer p){CHANNEL.send(PacketDistributor.PLAYER.with(()->p),OpenPacket.create(p));}
     public static void openEdit(ServerPlayer p,WaypointSavedData.Waypoint w){CHANNEL.send(PacketDistributor.PLAYER.with(()->p),OpenPacket.edit(w));}
     public static void save(UUID id,String name,String dimension,double x,double y,double z,int color,String icon){CHANNEL.sendToServer(new SavePacket(id,name,dimension,x,y,z,color,icon));}
     public static void toggle(UUID id){CHANNEL.sendToServer(new TogglePacket(id));}
@@ -57,7 +57,7 @@ public final class WaypointNetwork {
         static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->WaypointClientData.setWaypoints(p.list)));c.setPacketHandled(true);}
     }
     private record OpenPacket(boolean edit,UUID id,String name,String dimension,double x,double y,double z,int color,String icon){
-        static OpenPacket create(){return new OpenPacket(false,null,"", "",0,0,0,0x40D8FF,"◆");}
+        static OpenPacket create(ServerPlayer p){return new OpenPacket(false,null,"",p.level().dimension().location().toString(),p.getX(),p.getY(),p.getZ(),0x40D8FF,"◆");}
         static OpenPacket edit(WaypointSavedData.Waypoint w){return new OpenPacket(true,w.id(),w.name(),w.dimension(),w.x(),w.y(),w.z(),w.color(),w.icon());}
         static void encode(OpenPacket p,FriendlyByteBuf b){b.writeBoolean(p.edit);b.writeBoolean(p.id!=null);if(p.id!=null)b.writeUUID(p.id);b.writeUtf(p.name,32);b.writeUtf(p.dimension,256);b.writeDouble(p.x);b.writeDouble(p.y);b.writeDouble(p.z);b.writeInt(p.color);b.writeUtf(p.icon,4);}
         static OpenPacket decode(FriendlyByteBuf b){return new OpenPacket(b.readBoolean(),b.readBoolean()?b.readUUID():null,b.readUtf(32),b.readUtf(256),b.readDouble(),b.readDouble(),b.readDouble(),b.readInt(),b.readUtf(4));}
