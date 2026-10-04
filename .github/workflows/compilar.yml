@@ -1,0 +1,37 @@
+name: Compilar NegativeUtils
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Dar permisos al wrapper
+        run: chmod +x gradlew
+
+      - name: Compilar
+        run: ./gradlew build --no-daemon
+
+      - name: Subir JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: NegativeUtils
+          path: build/libs/*.jar
+          if-no-files-found: error
