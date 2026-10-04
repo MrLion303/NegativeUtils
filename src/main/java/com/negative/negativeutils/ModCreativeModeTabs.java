@@ -8,7 +8,7 @@ import net.minecraftforge.registries.RegistryObject;
 
 public final class ModCreativeModeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, EnciclopediaMod.MOD_ID);
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NegativeUtilsMod.MOD_ID);
 
     public static final RegistryObject<CreativeModeTab> NEGATIVEUTILS =
             CREATIVE_MODE_TABS.register(
