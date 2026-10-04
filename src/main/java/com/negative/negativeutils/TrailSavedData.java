@@ -42,7 +42,7 @@ public class TrailSavedData extends SavedData {
             if (!oldPoints.isEmpty()) {
                 Trail legacy = new Trail(
                         UUID.randomUUID(),
-                        "Sendero 1",
+                        "Sendero_1",
                         true,
                         255,
                         199,
@@ -120,10 +120,10 @@ public class TrailSavedData extends SavedData {
 
     public String nextAutomaticName() {
         int number = 1;
-        while (nameExists("Sendero " + number)) {
+        while (nameExists("Sendero_" + number)) {
             number++;
         }
-        return "Sendero " + number;
+        return "Sendero_" + number;
     }
 
     public boolean remove(UUID id) {
@@ -211,7 +211,7 @@ public class TrailSavedData extends SavedData {
         if (name == null) {
             return "";
         }
-        String clean = name.replaceAll("[\\p{Cntrl}§]", "").trim();
+        String clean = name.replaceAll("[\\p{Cntrl}§]", "").trim().replaceAll("\\s+", "_");
         return clean.length() > 32 ? clean.substring(0, 32) : clean;
     }
 

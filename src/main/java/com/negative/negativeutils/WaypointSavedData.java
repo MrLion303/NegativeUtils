@@ -144,8 +144,8 @@ public class WaypointSavedData extends SavedData {
 
     private String nextAutomaticName() {
         int n = 1;
-        while (getByName("Waypoint " + n) != null) n++;
-        return "Waypoint " + n;
+        while (getByName("Waypoint_" + n) != null) n++;
+        return "Waypoint_" + n;
     }
 
     private String nextAutomaticId() {
@@ -156,7 +156,7 @@ public class WaypointSavedData extends SavedData {
 
     public static String sanitizeName(String name) {
         if (name == null) return "";
-        String clean = name.replaceAll("[\\p{Cntrl}§]", "").trim();
+        String clean = name.replaceAll("[\\p{Cntrl}§]", "").trim().replaceAll("\\s+", "_");
         return clean.length() > 32 ? clean.substring(0, 32) : clean;
     }
 
