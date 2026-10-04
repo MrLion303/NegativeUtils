@@ -29,6 +29,19 @@ final class NegativeUtilsClientPacketHandler {
         Minecraft.getInstance().setScreen(new AdminPanelScreen());
     }
 
+    static void refreshAdminPanel() {
+        if (Minecraft.getInstance().screen instanceof AdminPanelScreen screen) {
+            screen.refreshData();
+        }
+    }
+
+    static void openWaypointEditor(java.util.UUID id, String name, String dimension,
+                                   double x, double y, double z, int color, String icon) {
+        Minecraft.getInstance().setScreen(
+                new WaypointScreen(id, name, dimension, x, y, z, color, icon)
+        );
+    }
+
     static void acceptDiscordEmotes(Map<String, Integer> mapping, byte[] atlas) {
         DiscordEmoteClientData.accept(mapping, atlas);
     }
