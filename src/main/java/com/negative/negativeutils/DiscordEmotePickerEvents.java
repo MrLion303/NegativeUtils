@@ -22,8 +22,7 @@ import net.minecraftforge.fml.common.Mod;
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class DiscordEmotePickerEvents {
-    private static final Map<Screen, Button> CHAT_BUTTONS =
-            new WeakHashMap<>();
+    private static final Map<Screen, Button> CHAT_BUTTONS = new WeakHashMap<>();
 
     private DiscordEmotePickerEvents() {
     }
@@ -45,25 +44,20 @@ public final class DiscordEmotePickerEvents {
 
         Button button = new Button(
                 Button.builder(
-                                Component.literal("Emotes"),
-                                ignored -> DiscordEmoteClientData
-                                        .ensureEmoteFontLoaded(() ->
-                                                Minecraft.getInstance().setScreen(
-                                                        new DiscordEmotePickerScreen(
-                                                                chatInput.getValue()
-                                                        )
-                                                )
-                                        )
-                )
-                        .bounds(
-                                event.getScreen().width - 72,
-                                event.getScreen().height - 42,
-                                64,
-                                20
+                        Component.literal("Emotes"),
+                        ignored -> DiscordEmoteClientData.ensureEmoteFontLoaded(() ->
+                                Minecraft.getInstance().setScreen(
+                                        new DiscordEmotePickerScreen(chatInput.getValue())
+                                )
                         )
-                        .tooltip(Tooltip.create(
-                                Component.literal("Insertar un emote de Discord")
-                        ))
+                ).bounds(
+                        event.getScreen().width - 72,
+                        event.getScreen().height - 42,
+                        64,
+                        20
+                ).tooltip(
+                        Tooltip.create(Component.literal("Insertar un emote de Discord"))
+                )
         ) {
             @Override
             public ComponentPath nextFocusPath(FocusNavigationEvent event) {
@@ -78,15 +72,11 @@ public final class DiscordEmotePickerEvents {
                     float partialTick
             ) {
                 int background = isHoveredOrFocused()
-                        ? 0xA0000000
-                        : 0x80000000;
-                graphics.fill(
-                        getX(),
-                        getY(),
-                        getX() + width,
-                        getY() + height,
-                        background
-                );
+                        ? 0xB0182028
+                        : 0x90101820;
+                graphics.fill(getX(), getY(), getX() + width, getY() + height, background);
+                graphics.fill(getX(), getY(), getX() + width, getY() + 1, 0xFF54D6FF);
+                graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0xFF54D6FF);
                 graphics.drawCenteredString(
                         Minecraft.getInstance().font,
                         getMessage(),
@@ -96,20 +86,14 @@ public final class DiscordEmotePickerEvents {
                 );
             }
         };
+
         event.addListener(button);
         CHAT_BUTTONS.put(chatScreen, button);
     }
 
     @SubscribeEvent
     public static void onChatScreenRender(ScreenEvent.Render.Post event) {
-        Button button = CHAT_BUTTONS.get(event.getScreen());
-        if (button != null) {
-            button.render(
-                    event.getGuiGraphics(),
-                    event.getMouseX(),
-                    event.getMouseY(),
-                    event.getPartialTick()
-            );
-        }
+        // El botón ya forma parte de la lista de widgets de la pantalla.
+        // Renderizarlo otra vez aquí provocaba un segundo dibujo sobre el mismo botón.
     }
 }
