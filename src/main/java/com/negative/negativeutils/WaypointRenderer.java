@@ -125,7 +125,7 @@ public final class WaypointRenderer {
             double distance = minecraft.player.position().distanceTo(anchor);
 
             float yaw = horizontalFacingYaw(anchor, camera);
-            float distanceScale = (float) Math.max(1.0, distance / 8.0);
+            float distanceScale = (float) Math.max(0.001, distance / 8.0);
             float markerScale = MARKER_SCALE * distanceScale;
             float labelScale = LABEL_SCALE * distanceScale;
             int color = 0xFF000000 | waypoint.color();
