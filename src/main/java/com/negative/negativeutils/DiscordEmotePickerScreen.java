@@ -10,7 +10,12 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 public final class DiscordEmotePickerScreen extends Screen {
-    private static final int ROWS = 5;
+    private static final int ROWS = 4;
+    private static final int MIN_COLUMNS = 6;
+    private static final int MAX_COLUMNS = 9;
+    private static final int BUTTON_SIZE = 26;
+    private static final int GAP = 4;
+
     private final String originalDraft;
     private final List<EmoteChoice> emotes;
     private int page;
@@ -82,17 +87,15 @@ public final class DiscordEmotePickerScreen extends Screen {
 
     @Override
     protected void init() {
-        columns = Math.max(4, Math.min(7, (width - 80) / 88));
+        columns = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, (width - 100) / (BUTTON_SIZE + GAP)));
 
         int pageSize = columns * ROWS;
         int pageCount = Math.max(1, (emotes.size() + pageSize - 1) / pageSize);
         page = Math.min(page, pageCount - 1);
 
-        int gap = 6;
-        int buttonWidth = Math.max(64, (width - 70 - gap * (columns - 1)) / columns);
-        int gridWidth = buttonWidth * columns + gap * (columns - 1);
-        int startX = (width - gridWidth) / 2;
-        int startY = 62;
+        int gridWidth = columns * BUTTON_SIZE + (columns - 1) * GAP;
+        int gridLeft = (width - gridWidth) / 2;
+        int gridTop = 52;
 
         int first = page * pageSize;
         int last = Math.min(emotes.size(), first + pageSize);
@@ -103,64 +106,55 @@ public final class DiscordEmotePickerScreen extends Screen {
 
             Component label;
             if (emote.atlasCodePoint() != null) {
-                label = Component.literal(
-                                new String(Character.toChars(emote.atlasCodePoint())))
-                        .withStyle(style -> style.withFont(
-                                DiscordEmoteClientData.EMOTE_FONT))
-                        .append(Component.literal(" " + emote.name()));
+                label = Component.literal(new String(Character.toChars(emote.atlasCodePoint())))
+                        .withStyle(style -> style.withFont(DiscordEmoteClientData.EMOTE_FONT));
             } else {
-                label = Component.literal(emote.text() + "  " + emote.name());
+                label = Component.literal(emote.text());
             }
 
             addRenderableWidget(
                     Button.builder(label, button -> insertEmote(emote.text()))
                             .bounds(
-                                    startX + (gridIndex % columns) * (buttonWidth + gap),
-                                    startY + (gridIndex / columns) * 30,
-                                    buttonWidth,
-                                    26
+                                    gridLeft + (gridIndex % columns) * (BUTTON_SIZE + GAP),
+                                    gridTop + (gridIndex / columns) * (BUTTON_SIZE + GAP),
+                                    BUTTON_SIZE,
+                                    BUTTON_SIZE
                             )
-                            .tooltip(Tooltip.create(Component.literal(emote.text())))
+                            .tooltip(Tooltip.create(Component.literal(emote.name())))
                             .build()
             );
         }
 
-        addRenderableWidget(
-                Button.builder(
-                                Component.literal("Cerrar"),
-                                button -> returnToChat(originalDraft))
-                        .bounds(width / 2 - 116, height - 32, 72, 22)
-                        .build()
-        );
+        int controlsY = gridTop + ROWS * (BUTTON_SIZE + GAP) + 10;
+        addRenderableWidget(Button.builder(
+                        Component.literal("Cerrar"),
+                        button -> returnToChat(originalDraft))
+                .bounds(width / 2 - 74, controlsY, 54, 20)
+                .build());
 
         if (pageCount > 1) {
-            addRenderableWidget(
-                    Button.builder(
-                                    Component.literal("‹"),
-                                    button -> {
-                                        page = (page + pageCount - 1) % pageCount;
-                                        rebuildWidgets();
-                                    })
-                            .bounds(width / 2 - 38, height - 32, 30, 22)
-                            .build()
-            );
-            addRenderableWidget(
-                    Button.builder(
-                                    Component.literal("›"),
-                                    button -> {
-                                        page = (page + 1) % pageCount;
-                                        rebuildWidgets();
-                                    })
-                            .bounds(width / 2 + 8, height - 32, 30, 22)
-                            .build()
-            );
+            addRenderableWidget(Button.builder(
+                            Component.literal("‹"),
+                            button -> {
+                                page = (page + pageCount - 1) % pageCount;
+                                rebuildWidgets();
+                            })
+                    .bounds(width / 2 - 16, controlsY, 20, 20)
+                    .build());
+            addRenderableWidget(Button.builder(
+                            Component.literal("›"),
+                            button -> {
+                                page = (page + 1) % pageCount;
+                                rebuildWidgets();
+                            })
+                    .bounds(width / 2 + 8, controlsY, 20, 20)
+                    .build());
         }
     }
 
     private void insertEmote(String token) {
         String draft = originalDraft;
-        if (!draft.isEmpty()
-                && !Character.isWhitespace(draft.charAt(draft.length() - 1))) {
+        if (!draft.isEmpty() && !Character.isWhitespace(draft.charAt(draft.length() - 1))) {
             draft += " ";
         }
         returnToChat(draft + token);
@@ -171,44 +165,28 @@ public final class DiscordEmotePickerScreen extends Screen {
     }
 
     @Override
-    public void render(
-            GuiGraphics graphics,
-            int mouseX,
-            int mouseY,
-            float partialTick
-    ) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         NegativeUtilsGuiStyle.renderFrame(graphics, width, height);
 
-        graphics.drawCenteredString(
-                font,
-                title,
-                width / 2,
-                14,
-                0xFFFFFF
-        );
-
         int pageSize = columns * ROWS;
         int pageCount = Math.max(1, (emotes.size() + pageSize - 1) / pageSize);
+        int gridWidth = columns * BUTTON_SIZE + (columns - 1) * GAP;
+        int panelLeft = (width - gridWidth) / 2 - 10;
+        int panelRight = (width + gridWidth) / 2 + 10;
+        int panelTop = 34;
+        int panelBottom = 132;
 
+        graphics.fill(panelLeft, panelTop, panelRight, panelBottom, 0xE8141B24);
+        graphics.fill(panelLeft, panelTop, panelRight, panelTop + 2, 0xFF54D6FF);
+        graphics.drawCenteredString(font, title, width / 2, 10, 0xFFFFFFFF);
         graphics.drawCenteredString(
                 font,
-                "Página " + (page + 1) + " / " + pageCount
-                        + " — selecciona un emote para insertarlo",
+                "Página " + (page + 1) + " / " + pageCount,
                 width / 2,
-                30,
-                0xCCCCCC
+                25,
+                0xFFBFC7D5
         );
-
-        if (emotes.isEmpty()) {
-            graphics.drawCenteredString(
-                    font,
-                    "Todavía no hay emotes sincronizados.",
-                    width / 2,
-                    height / 2,
-                    0xCCCCCC
-            );
-        }
 
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -218,10 +196,6 @@ public final class DiscordEmotePickerScreen extends Screen {
         return false;
     }
 
-    private record EmoteChoice(
-            String name,
-            String text,
-            Integer atlasCodePoint
-    ) {
+    private record EmoteChoice(String name, String text, Integer atlasCodePoint) {
     }
 }
