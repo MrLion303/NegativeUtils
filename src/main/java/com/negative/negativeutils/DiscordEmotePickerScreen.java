@@ -175,7 +175,7 @@ public final class DiscordEmotePickerScreen extends Screen {
         int panelLeft = (width - gridWidth) / 2 - 10;
         int panelRight = (width + gridWidth) / 2 + 10;
         int panelTop = 34;
-        int panelBottom = gridTop + ROWS * (BUTTON_SIZE + GAP) + 42;
+        int panelBottom = 52 + ROWS * (BUTTON_SIZE + GAP) + 42;
 
         graphics.fill(panelLeft, panelTop, panelRight, panelBottom, 0xE8141B24);
         graphics.fill(panelLeft, panelTop, panelRight, panelTop + 2, 0xFF54D6FF);
