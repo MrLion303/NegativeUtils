@@ -1,7 +1,8 @@
 package com.negative.negativeutils;
 
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(NegativeUtilsMod.MOD_ID)
@@ -9,7 +10,9 @@ public final class NegativeUtilsMod {
     public static final String MOD_ID = "negativeutils";
 
     public NegativeUtilsMod(FMLJavaModLoadingContext context) {
-        IEventBus modEventBus = context.getModEventBus();
+        var modEventBus = context.getModEventBus();
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
 
         ModItems.ITEMS.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
