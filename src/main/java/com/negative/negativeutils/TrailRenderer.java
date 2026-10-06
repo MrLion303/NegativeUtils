@@ -91,6 +91,7 @@ public final class TrailRenderer {
 
         double sideX = -dz / length;
         double sideZ = dx / length;
+        float direction = (float) Math.atan2(dx, dz);
         int count = Math.max(1, (int) Math.floor(length / FOOTPRINT_SPACING));
 
         for (int i = 0; i <= count; i++) {
@@ -102,8 +103,9 @@ public final class TrailRenderer {
             x += sideX * side;
             z += sideZ * side;
 
-            double rotation = (i % 2 == 0) ? 0.20 : -0.20;
-            drawFootprint(poseStack, buffers, font, x, y, z, rotation, color);
+            float footRotation = direction + (i % 2 == 0 ? 0.20F : -0.20F);
+            drawFootprint(
+                    poseStack, buffers, font, x, y, z, footRotation, color);
         }
     }
 
@@ -114,11 +116,11 @@ public final class TrailRenderer {
             double x,
             double y,
             double z,
-            double rotation,
+            float rotation,
             int color) {
         poseStack.pushPose();
         poseStack.translate(x, y, z);
-        poseStack.mulPose(Axis.YP.rotation((float) rotation));
+        poseStack.mulPose(Axis.YP.rotation(rotation));
         poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
         poseStack.scale(0.045F, -0.045F, 0.045F);
 
@@ -127,7 +129,6 @@ public final class TrailRenderer {
         drawGlyph(poseStack, buffers, font, "•", 0.0F, -4.0F, color);
         drawGlyph(poseStack, buffers, font, "•", 2.5F, -3.0F, color);
 
-        // Dibuja la cara opuesta para que las huellas se vean desde arriba y desde abajo.
         poseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
         drawGlyph(poseStack, buffers, font, "●", 0.0F, 1.0F, color);
         drawGlyph(poseStack, buffers, font, "•", -2.5F, -3.0F, color);
@@ -152,7 +153,9 @@ public final class TrailRenderer {
                 false,
                 poseStack.last().pose(),
                 buffers,
-                Font.DisplayMode.SEE_THROUGH,
+                Config.trailsThroughBlocks
+                        ? Font.DisplayMode.SEE_THROUGH
+                        : Font.DisplayMode.NORMAL,
                 0,
                 LightTexture.FULL_BRIGHT);
     }
