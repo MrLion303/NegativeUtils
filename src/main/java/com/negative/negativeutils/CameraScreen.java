@@ -107,7 +107,7 @@ public final class CameraScreen extends Screen {
     private EditBox field(int x, int y, int w, int max) {
         EditBox box = new EditBox(font, x, y, w, 20, Component.empty());
         box.setMaxLength(max);
-        box.setHint(Component.empty());
+        NegativeUtilsGuiStyle.styleField(box);
         return box;
     }
 
