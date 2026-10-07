@@ -11,8 +11,27 @@ public final class CountdownClientData {
 
     private CountdownClientData() {}
 
-    public static void set(List<Entry> entries) {
-        countdowns = List.copyOf(entries);
+    public static boolean set(List<Entry> entries) {
+        List<Entry> next = List.copyOf(entries);
+        boolean metadataChanged = countdowns.size() != next.size();
+        if (!metadataChanged) {
+            for (int i = 0; i < next.size(); i++) {
+                Entry oldEntry = countdowns.get(i);
+                Entry newEntry = next.get(i);
+                if (!oldEntry.id().equals(newEntry.id())
+                        || !oldEntry.name().equals(newEntry.name())
+                        || oldEntry.running() != newEntry.running()
+                        || oldEntry.finished() != newEntry.finished()
+                        || oldEntry.displayColor() != newEntry.displayColor()
+                        || !oldEntry.displayText().equals(newEntry.displayText())
+                        || !oldEntry.displayPosition().equals(newEntry.displayPosition())) {
+                    metadataChanged = true;
+                    break;
+                }
+            }
+        }
+        countdowns = next;
+        return metadataChanged;
     }
 
     /**
