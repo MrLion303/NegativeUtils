@@ -1,6 +1,9 @@
 package com.negative.negativeutils;
 
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
 public final class WaypointClientData {
     private static List<WaypointSavedData.Waypoint> waypoints = List.of();
@@ -27,6 +30,16 @@ public final class WaypointClientData {
 
     public static List<WaypointSavedData.Waypoint> getWaypoints() {
         return waypoints;
+    }
+
+    public static Vec3 resolvePosition(WaypointSavedData.Waypoint waypoint) {
+        if (!waypoint.tracksPlayer()) return new Vec3(waypoint.x(), waypoint.y(), waypoint.z());
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return null;
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (entity.getUUID().equals(waypoint.trackedPlayer())) return entity.position();
+        }
+        return null;
     }
 
     public static void clear() {
