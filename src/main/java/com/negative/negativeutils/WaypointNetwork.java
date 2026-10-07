@@ -36,7 +36,11 @@ public final class WaypointNetwork {
     }
 
     public static void openCreate(ServerPlayer player, String commandId) {
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), OpenPacket.create(player, commandId));
+        openCreate(player, commandId, false);
+    }
+
+    public static void openCreate(ServerPlayer player, String commandId, boolean tracker) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), OpenPacket.create(player, commandId, tracker));
     }
 
     public static void openEdit(ServerPlayer player, WaypointSavedData.Waypoint waypoint) {
@@ -49,7 +53,7 @@ public final class WaypointNetwork {
 
     public static void save(UUID id, String commandId, String name, String dimension,
                             double x, double y, double z, int color, String icon, String corner) {
-        CHANNEL.sendToServer(new SavePacket(id, commandId, name, dimension, x, y, z, color, icon, corner));
+        CHANNEL.sendToServer(new SavePacket(id, commandId, name, dimension, x, y, z, color, icon, corner, false, ""));
     }
 
     public static void toggle(UUID id) { CHANNEL.sendToServer(new TogglePacket(id)); }
@@ -65,18 +69,20 @@ public final class WaypointNetwork {
     }
 
     private record SavePacket(UUID id, String commandId, String name, String dimension,
-                              double x, double y, double z, int color, String icon, String corner) {
+                              double x, double y, double z, int color, String icon, String corner,
+                              boolean tracker, String trackedPlayerName) {
         static void encode(SavePacket p, FriendlyByteBuf b) {
             b.writeBoolean(p.id != null);
             if (p.id != null) b.writeUUID(p.id);
             b.writeUtf(p.commandId, 48); b.writeUtf(p.name, 32); b.writeUtf(p.dimension, 256);
             b.writeDouble(p.x); b.writeDouble(p.y); b.writeDouble(p.z);
             b.writeInt(p.color); b.writeUtf(p.icon, 4); b.writeUtf(p.corner, 16);
+            b.writeBoolean(p.tracker); b.writeUtf(p.trackedPlayerName, 32);
         }
         static SavePacket decode(FriendlyByteBuf b) {
             return new SavePacket(b.readBoolean() ? b.readUUID() : null, b.readUtf(48), b.readUtf(32),
                     b.readUtf(256), b.readDouble(), b.readDouble(), b.readDouble(), b.readInt(),
-                    b.readUtf(4), b.readUtf(16));
+                    b.readUtf(4), b.readUtf(16), b.readBoolean(), b.readUtf(32));
         }
         static void handle(SavePacket p, Supplier<NetworkEvent.Context> supplier) {
             NetworkEvent.Context context = supplier.get();
@@ -86,12 +92,31 @@ public final class WaypointNetwork {
                 WaypointSavedData data = WaypointSavedData.get(player.getServer());
                 Vec3 position = new Vec3(p.x, p.y, p.z);
                 WaypointSavedData.Waypoint waypoint;
+                ServerPlayer trackedTarget = null;
+                if (p.tracker) {
+                    String targetName = p.trackedPlayerName.trim();
+                    if (targetName.isBlank()) {
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                                "Escribe el nombre del jugador que quieres rastrear."));
+                        return;
+                    }
+                    trackedTarget = player.getServer().getPlayerList().getPlayerByName(targetName);
+                    if (trackedTarget == null) {
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                                "El jugador no está conectado: " + targetName));
+                        return;
+                    }
+                }
                 if (p.id == null) {
-                    waypoint = data.add(player.getUUID(), p.commandId, p.name, p.dimension,
-                            position, p.color, p.icon, p.corner);
+                    waypoint = p.tracker
+                            ? data.addTracked(player.getUUID(), p.commandId, p.name, p.dimension,
+                                    position, p.color, p.icon, p.corner, trackedTarget.getUUID())
+                            : data.add(player.getUUID(), p.commandId, p.name, p.dimension,
+                                    position, p.color, p.icon, p.corner);
                 } else {
                     boolean updated = data.update(p.id, p.commandId, p.name, p.dimension,
-                            position, p.color, p.icon, p.corner);
+                            position, p.color, p.icon, p.corner,
+                            p.tracker ? trackedTarget.getUUID() : null);
                     waypoint = updated ? data.getById(p.id) : null;
                 }
                 if (waypoint == null) {
@@ -185,14 +210,18 @@ public final class WaypointNetwork {
     }
 
     private record OpenPacket(boolean edit, UUID id, String commandId, String name, String dimension,
-                              double x, double y, double z, int color, String icon, String corner) {
-        static OpenPacket create(ServerPlayer player, String commandId) {
+                              double x, double y, double z, int color, String icon, String corner,
+                              boolean tracker, String trackedPlayerName) {
+        static OpenPacket create(ServerPlayer player, String commandId, boolean tracker) {
             return new OpenPacket(false, null, commandId, "", player.level().dimension().location().toString(),
-                    player.getX(), player.getY(), player.getZ(), 0x40D8FF, "◆", "TOP_LEFT");
+                    player.getX(), player.getY(), player.getZ(), 0x40D8FF, "◆", "TOP_LEFT",
+                    tracker, "");
         }
         static OpenPacket edit(WaypointSavedData.Waypoint w) {
+            String trackedName = "";
             return new OpenPacket(true, w.id(), w.commandId(), w.name(), w.dimension(),
-                    w.x(), w.y(), w.z(), w.color(), w.icon(), w.corner());
+                    w.x(), w.y(), w.z(), w.color(), w.icon(), w.corner(),
+                    w.tracksPlayer(), trackedName);
         }
         static void encode(OpenPacket p, FriendlyByteBuf b) {
             b.writeBoolean(p.edit); b.writeBoolean(p.id != null);
@@ -200,17 +229,19 @@ public final class WaypointNetwork {
             b.writeUtf(p.commandId, 48); b.writeUtf(p.name, 32); b.writeUtf(p.dimension, 256);
             b.writeDouble(p.x); b.writeDouble(p.y); b.writeDouble(p.z);
             b.writeInt(p.color); b.writeUtf(p.icon, 4); b.writeUtf(p.corner, 16);
+            b.writeBoolean(p.tracker); b.writeUtf(p.trackedPlayerName, 32);
         }
         static OpenPacket decode(FriendlyByteBuf b) {
             return new OpenPacket(b.readBoolean(), b.readBoolean() ? b.readUUID() : null,
                     b.readUtf(48), b.readUtf(32), b.readUtf(256), b.readDouble(), b.readDouble(),
-                    b.readDouble(), b.readInt(), b.readUtf(4), b.readUtf(16));
+                    b.readDouble(), b.readInt(), b.readUtf(4), b.readUtf(16),
+                    b.readBoolean(), b.readUtf(32));
         }
         static void handle(OpenPacket p, Supplier<NetworkEvent.Context> supplier) {
             NetworkEvent.Context context = supplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () ->
                     () -> NegativeUtilsClientPacketHandler.openWaypointEditor(p.id, p.commandId, p.name,
-                            p.dimension, p.x, p.y, p.z, p.color, p.icon, p.corner)));
+                            p.dimension, p.x, p.y, p.z, p.color, p.icon, p.corner, p.tracker, p.trackedPlayerName)));
             context.setPacketHandled(true);
         }
     }
