@@ -1,7 +1,5 @@
 package com.negative.negativeutils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -10,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
@@ -63,23 +60,18 @@ public final class CameraNetwork {
 
     private record SavePacket(UUID id, String commandId, String name, String targetType,
                               String dimension, double x, double y, double z,
-                              int entityId, String playerName, UUID playerUuid, boolean forceLook) {
+                              int entityId, String playerName, boolean forceLook) {
         static void encode(SavePacket p, FriendlyByteBuf b) {
             b.writeBoolean(p.id != null);
             if (p.id != null) b.writeUUID(p.id);
-            b.writeUtf(p.commandId, 48);
-            b.writeUtf(p.name, 48);
-            b.writeUtf(p.targetType, 8);
+            b.writeUtf(p.commandId, 48); b.writeUtf(p.name, 48); b.writeUtf(p.targetType, 8);
             b.writeUtf(p.dimension, 256);
             b.writeDouble(p.x); b.writeDouble(p.y); b.writeDouble(p.z);
-            b.writeInt(p.entityId);
-            b.writeUtf(p.playerName, 32);
-            b.writeBoolean(p.forceLook);
+            b.writeInt(p.entityId); b.writeUtf(p.playerName, 32); b.writeBoolean(p.forceLook);
         }
 
         static SavePacket decode(FriendlyByteBuf b) {
-            return new SavePacket(
-                    b.readBoolean() ? b.readUUID() : null,
+            return new SavePacket(b.readBoolean() ? b.readUUID() : null,
                     b.readUtf(48), b.readUtf(48), b.readUtf(8), b.readUtf(256),
                     b.readDouble(), b.readDouble(), b.readDouble(), b.readInt(),
                     b.readUtf(32), b.readBoolean());
@@ -104,13 +96,10 @@ public final class CameraNetwork {
                         return;
                     }
                     playerUuid = target.getUUID();
-                } else if (type.equals("ENTITY")) {
-                    Entity target = sender.level().getEntity(p.entityId);
-                    if (target == null) {
-                        sender.sendSystemMessage(Component.literal(
-                                "No existe una entidad con ID " + p.entityId + " en tu dimensión."));
-                        return;
-                    }
+                } else if (type.equals("ENTITY") && sender.level().getEntity(p.entityId) == null) {
+                    sender.sendSystemMessage(Component.literal(
+                            "No existe una entidad con ID " + p.entityId + " en tu dimensión."));
+                    return;
                 }
 
                 CameraSavedData.Camera camera;
@@ -118,7 +107,6 @@ public final class CameraNetwork {
                     camera = data.add(sender.getUUID(), p.commandId, p.name, type, p.dimension,
                             p.x, p.y, p.z, p.entityId, playerName, playerUuid, p.forceLook);
                 } else {
-                    camera = data.getById(p.id);
                     boolean updated = data.update(p.id, p.commandId, p.name, type, p.dimension,
                             p.x, p.y, p.z, p.entityId, playerName, playerUuid, p.forceLook);
                     camera = updated ? data.getById(p.id) : null;
@@ -138,20 +126,20 @@ public final class CameraNetwork {
 
     private record OpenPacket(boolean edit, UUID id, String commandId, String name,
                               String targetType, String dimension, double x, double y, double z,
-                              int entityId, String playerName, boolean forceLook) {
+                              int entityId, String playerName, UUID playerUuid, boolean forceLook) {
         static OpenPacket create(String commandId, String dimension, double x, double y, double z) {
             return new OpenPacket(false, null, commandId, "", "COORDS", dimension,
-                    x, y, z, 0, "", false);
+                    x, y, z, 0, "", null, false);
         }
 
         static OpenPacket edit(CameraSavedData.Camera c) {
             return new OpenPacket(true, c.id(), c.commandId(), c.name(), c.targetType(),
-                    c.dimension(), c.x(), c.y(), c.z(), c.entityId(), c.playerName(), c.playerUuid(), c.forceLook());
+                    c.dimension(), c.x(), c.y(), c.z(), c.entityId(), c.playerName(),
+                    c.playerUuid(), c.forceLook());
         }
 
         static void encode(OpenPacket p, FriendlyByteBuf b) {
-            b.writeBoolean(p.edit);
-            b.writeBoolean(p.id != null);
+            b.writeBoolean(p.edit); b.writeBoolean(p.id != null);
             if (p.id != null) b.writeUUID(p.id);
             b.writeUtf(p.commandId, 48); b.writeUtf(p.name, 48); b.writeUtf(p.targetType, 8);
             b.writeUtf(p.dimension, 256);
@@ -163,19 +151,19 @@ public final class CameraNetwork {
         }
 
         static OpenPacket decode(FriendlyByteBuf b) {
-            return new OpenPacket(
-                    b.readBoolean(), b.readBoolean() ? b.readUUID() : null,
+            return new OpenPacket(b.readBoolean(), b.readBoolean() ? b.readUUID() : null,
                     b.readUtf(48), b.readUtf(48), b.readUtf(8), b.readUtf(256),
-                    b.readDouble(), b.readDouble(), b.readDouble(), b.readInt(),
-                    b.readUtf(32), b.readBoolean());
+                    b.readDouble(), b.readDouble(), b.readDouble(), b.readInt(), b.readUtf(32),
+                    b.readBoolean() ? b.readUUID() : null, b.readBoolean());
         }
 
         static void handle(OpenPacket p, Supplier<NetworkEvent.Context> supplier) {
             NetworkEvent.Context context = supplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> NegativeUtilsClientPacketHandler.openCameraEditor(
-                            p.id, p.commandId, p.name, p.targetType, p.dimension,
-                            p.x, p.y, p.z, p.entityId, p.playerName, p.forceLook)));
+                            p.id(), p.commandId(), p.name(), p.targetType(), p.dimension(),
+                            p.x(), p.y(), p.z(), p.entityId(), p.playerName(),
+                            p.playerUuid(), p.forceLook())));
             context.setPacketHandled(true);
         }
     }
@@ -185,20 +173,23 @@ public final class CameraNetwork {
                               int entityId, String playerName, UUID playerUuid, boolean forceLook) {
         static ShowPacket from(CameraSavedData.Camera c) {
             return new ShowPacket(c.id(), c.commandId(), c.name(), c.targetType(), c.dimension(),
-                    c.x(), c.y(), c.z(), c.entityId(), c.playerName(), c.forceLook());
+                    c.x(), c.y(), c.z(), c.entityId(), c.playerName(), c.playerUuid(), c.forceLook());
         }
 
         static void encode(ShowPacket p, FriendlyByteBuf b) {
             b.writeUUID(p.id); b.writeUtf(p.commandId, 48); b.writeUtf(p.name, 48);
             b.writeUtf(p.targetType, 8); b.writeUtf(p.dimension, 256);
             b.writeDouble(p.x); b.writeDouble(p.y); b.writeDouble(p.z);
-            b.writeInt(p.entityId); b.writeUtf(p.playerName, 32); b.writeBoolean(p.forceLook);
+            b.writeInt(p.entityId); b.writeUtf(p.playerName, 32);
+            b.writeBoolean(p.playerUuid != null);
+            if (p.playerUuid != null) b.writeUUID(p.playerUuid);
+            b.writeBoolean(p.forceLook);
         }
 
         static ShowPacket decode(FriendlyByteBuf b) {
             return new ShowPacket(b.readUUID(), b.readUtf(48), b.readUtf(48), b.readUtf(8),
                     b.readUtf(256), b.readDouble(), b.readDouble(), b.readDouble(), b.readInt(),
-                    b.readUtf(32), b.readBoolean());
+                    b.readUtf(32), b.readBoolean() ? b.readUUID() : null, b.readBoolean());
         }
 
         static void handle(ShowPacket p, Supplier<NetworkEvent.Context> supplier) {
@@ -206,7 +197,8 @@ public final class CameraNetwork {
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> CameraClientData.show(new CameraClientData.Active(
                             p.id(), p.commandId(), p.name(), p.targetType(), p.dimension(),
-                            p.x(), p.y(), p.z(), p.entityId(), p.playerName(), p.playerUuid(), p.forceLook))));
+                            p.x(), p.y(), p.z(), p.entityId(), p.playerName(),
+                            p.playerUuid(), p.forceLook))));
             context.setPacketHandled(true);
         }
     }
