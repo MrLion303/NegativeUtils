@@ -48,6 +48,13 @@ final class NegativeUtilsClientPacketHandler {
         Minecraft.getInstance().setScreen(new WaypointListScreen());
     }
 
+    static void openCameraEditor(java.util.UUID id, String commandId, String name, String targetType,
+                                 String dimension, double x, double y, double z, int entityId,
+                                 String playerName, java.util.UUID playerUuid, boolean forceLook) {
+        Minecraft.getInstance().setScreen(new CameraScreen(id, commandId, name, targetType,
+                dimension, x, y, z, entityId, playerName, playerUuid, forceLook));
+    }
+
     static void acceptDiscordEmotes(Map<String, Integer> mapping, byte[] atlas) {
         DiscordEmoteClientData.accept(mapping, atlas);
     }
