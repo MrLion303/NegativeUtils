@@ -151,7 +151,7 @@ public final class WaypointNetwork {
                 b.writeUtf(w.commandId(), 48); b.writeUtf(w.name(), 32); b.writeUtf(w.dimension(), 256);
                 b.writeDouble(w.x()); b.writeDouble(w.y()); b.writeDouble(w.z());
                 b.writeInt(w.color()); b.writeByte(w.shape()); b.writeBoolean(w.visible());
-                b.writeUtf(w.icon(), 4); b.writeUtf(w.corner(), 16);
+                b.writeUtf(w.icon(), 4); b.writeUtf(w.corner(), 16); b.writeBoolean(w.trackedPlayer() != null); if (w.trackedPlayer() != null) b.writeUUID(w.trackedPlayer());
             }
         }
         static SyncPacket decode(FriendlyByteBuf b) {
@@ -161,7 +161,7 @@ public final class WaypointNetwork {
             for (int i = 0; i < count; i++) {
                 list.add(new WaypointSavedData.Waypoint(b.readUUID(), b.readUUID(), b.readUtf(48),
                         b.readUtf(32), b.readUtf(256), b.readDouble(), b.readDouble(), b.readDouble(),
-                        b.readInt() & 0xFFFFFF, b.readByte(), b.readBoolean(), b.readUtf(4), b.readUtf(16)));
+                        b.readInt() & 0xFFFFFF, b.readByte(), b.readBoolean(), b.readUtf(4), b.readUtf(16), b.readBoolean() ? b.readUUID() : null));
             }
             return new SyncPacket(list);
         }
