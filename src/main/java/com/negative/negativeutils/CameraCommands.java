@@ -39,7 +39,10 @@ public final class CameraCommands {
                                         .suggests(CameraCommands::suggestIds)
                                         .executes(c -> show(c))))
                         .then(Commands.literal("ocultar")
-                                .executes(c -> hide(c))));
+                                .executes(c -> hide(c))
+                                .then(Commands.argument("id", StringArgumentType.word())
+                                        .suggests(CameraCommands::suggestIds)
+                                        .executes(c -> hide(c))))));
     }
 
     private static int create(CommandContext<CommandSourceStack> context)
