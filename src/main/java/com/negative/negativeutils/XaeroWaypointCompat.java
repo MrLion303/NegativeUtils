@@ -32,7 +32,8 @@ public final class XaeroWaypointCompat {
             Class<?> manager = Class.forName(MANAGER);
             Method getCustom = manager.getMethod("getCustomWaypoints", String.class);
             Object table = getCustom.invoke(null, MOD_NAME);
-            if (!(table instanceof Collection<?> collection)) return;
+            if (!(table instanceof Collection<?>)) return;
+            @SuppressWarnings("rawtypes") Collection collection = (Collection) table;
 
             collection.clear();
             String dimension = mc.level.dimension().location().toString();
