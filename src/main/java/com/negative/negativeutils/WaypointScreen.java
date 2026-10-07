@@ -18,9 +18,10 @@ public class WaypointScreen extends Screen {
             "Esquina: abajo izquierda", "Esquina: abajo derecha"};
 
     private final UUID id;
-    private final String initialCommandId, initialName, initialDimension, initialIcon, initialCorner;
+    private final String initialCommandId, initialName, initialDimension, initialIcon, initialCorner, initialTrackedPlayerName;
+    private final boolean trackerMode;
     private final double initialX, initialY, initialZ;
-    private EditBox commandIdInput, nameInput, xInput, yInput, zInput, dimensionInput, colorInput;
+    private EditBox commandIdInput, nameInput, trackedPlayerInput, xInput, yInput, zInput, dimensionInput, colorInput;
     private Button iconButton;
     private int color, draftColor;
     private String selectedIcon, selectedCorner;
@@ -29,7 +30,13 @@ public class WaypointScreen extends Screen {
 
     public WaypointScreen(UUID id, String commandId, String name, String dimension,
                           double x, double y, double z, int color, String icon, String corner) {
-        super(Component.literal(id == null ? "Crear waypoint" : "Editar waypoint"));
+        this(id, commandId, name, dimension, x, y, z, color, icon, corner, false, "");
+    }
+
+    public WaypointScreen(UUID id, String commandId, String name, String dimension,
+                          double x, double y, double z, int color, String icon, String corner,
+                          boolean trackerMode, String trackedPlayerName) {
+        super(Component.literal(id == null ? (trackerMode ? "Crear tracker" : "Crear waypoint") : "Editar waypoint"));
         this.id = id;
         this.initialCommandId = commandId;
         this.initialName = name;
@@ -40,6 +47,8 @@ public class WaypointScreen extends Screen {
         this.initialIcon = this.selectedIcon;
         this.selectedCorner = WaypointSavedData.sanitizeCorner(corner);
         this.initialCorner = this.selectedCorner;
+        this.trackerMode = trackerMode;
+        this.initialTrackedPlayerName = trackedPlayerName == null ? "" : trackedPlayerName;
         this.draftColor = this.color;
     }
 
@@ -49,16 +58,21 @@ public class WaypointScreen extends Screen {
         int panelWidth = Math.min(300, Math.max(220, width - 16));
         int left = (width - panelWidth) / 2;
         int contentWidth = Math.min(230, panelWidth - 16);
-        layoutTop = Math.max(8, (height - 245) / 2);
+        layoutTop = Math.max(8, (height - (trackerMode ? 271 : 245)) / 2);
         int top = layoutTop;
+        int offset = trackerMode ? 26 : 0;
         commandIdInput = field(left, top + 22, contentWidth, "Identificador (ej. waypoint_1)", 48, initialCommandId);
-                nameInput = field(left, top + 48, contentWidth, "Nombre visible", 32, initialName);
+        nameInput = field(left, top + 48, contentWidth, "Nombre visible", 32, initialName);
+        if (trackerMode) {
+            trackedPlayerInput = field(left, top + 74, contentWidth, "Nombre del jugador", 16, initialTrackedPlayerName);
+            addRenderableWidget(trackedPlayerInput);
+        }
         int coordinateWidth = (contentWidth - 8) / 3;
-        xInput = field(left, top + 74, coordinateWidth, "X", 16, String.valueOf(initialX));
-        yInput = field(left + coordinateWidth + 4, top + 74, coordinateWidth, "Y", 16, String.valueOf(initialY));
-        zInput = field(left + (coordinateWidth + 4) * 2, top + 74, coordinateWidth, "Z", 16, String.valueOf(initialZ));
-        dimensionInput = field(left, top + 100, contentWidth, "Dimensión", 256, initialDimension);
-        colorInput = field(left + contentWidth - 72, top + 127, 72, "HEX", 6, String.format(Locale.ROOT, "%06X", color));
+        xInput = field(left, top + 74 + offset, coordinateWidth, "X", 16, String.valueOf(initialX));
+        yInput = field(left + coordinateWidth + 4, top + 74 + offset, coordinateWidth, "Y", 16, String.valueOf(initialY));
+        zInput = field(left + (coordinateWidth + 4) * 2, top + 74 + offset, coordinateWidth, "Z", 16, String.valueOf(initialZ));
+        dimensionInput = field(left, top + 100 + offset, contentWidth, "Dimensión", 256, initialDimension);
+        colorInput = field(left + contentWidth - 72, top + 127 + offset, 72, "HEX", 6, String.format(Locale.ROOT, "%06X", color));
         colorInput.setFilter(value -> value.length() <= 6
                 && value.chars().allMatch(character -> Character.digit(character, 16) >= 0));
         addRenderableWidget(commandIdInput); addRenderableWidget(nameInput);
@@ -66,26 +80,26 @@ public class WaypointScreen extends Screen {
         addRenderableWidget(dimensionInput); addRenderableWidget(colorInput);
         int colorButtonWidth = 82;
         iconButton = Button.builder(Component.literal("Icono: " + selectedIcon), button -> iconPickerOpen = true)
-                .bounds(left, top + 126, Math.min(90, contentWidth - colorButtonWidth - 6), 20).build();
+                .bounds(left, top + 126 + offset, Math.min(90, contentWidth - colorButtonWidth - 6), 20).build();
         addRenderableWidget(iconButton);
         addRenderableWidget(Button.builder(Component.literal("Elegir color"), button -> openColorPicker())
-                .bounds(left + contentWidth - 82, top + 126, 82, 20).build());
+                .bounds(left + contentWidth - 82, top + 126 + offset, 82, 20).build());
         addRenderableWidget(Button.builder(Component.literal(cornerLabel(selectedCorner)), button -> {
             int index = cornerIndex(selectedCorner);
             selectedCorner = CORNERS[(index + 1) % CORNERS.length];
             button.setMessage(Component.literal(cornerLabel(selectedCorner)));
-        }).bounds(left, top + 152, contentWidth, 20).build());
+        }).bounds(left, top + 152 + offset, contentWidth, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Guardar"), button -> save())
-                .bounds(cx - 100, top + 178, 95, 20).build());
+                .bounds(cx - 100, top + 178 + offset, 95, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Activar / Desactivar"), button -> {
             if (id != null) WaypointNetwork.toggle(id);
-        }).bounds(cx + 5, top + 178, 95, 20).build());
+        }).bounds(cx + 5, top + 178 + offset, 95, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Eliminar"), button -> {
             if (id != null) { WaypointNetwork.delete(id); onClose(); }
-        }).bounds(cx - 100, top + 202, 95, 20).build());
+        }).bounds(cx - 100, top + 202 + offset, 95, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Cerrar"), button -> onClose())
-                .bounds(cx + 5, top + 202, 95, 20).build());
+                .bounds(cx + 5, top + 202 + offset, 95, 20).build());
     }
 
     private String cornerLabel(String corner) {
@@ -113,7 +127,8 @@ public class WaypointScreen extends Screen {
             if (commandId.isBlank() || nameInput.getValue().trim().isBlank()) return;
             WaypointNetwork.save(id, commandId, nameInput.getValue(), dimensionInput.getValue(),
                     Double.parseDouble(xInput.getValue()), Double.parseDouble(yInput.getValue()),
-                    Double.parseDouble(zInput.getValue()), selectedColor, selectedIcon, selectedCorner);
+                    Double.parseDouble(zInput.getValue()), selectedColor, selectedIcon, selectedCorner,
+                    trackerMode, trackerMode ? trackedPlayerInput.getValue().trim() : "");
             onClose();
         } catch (Exception ignored) {
         }
@@ -244,14 +259,17 @@ public class WaypointScreen extends Screen {
         int cx = width / 2;
         int panelWidth = Math.min(300, Math.max(220, width - 16));
         int panelLeft = (width - panelWidth) / 2;
-        graphics.fill(panelLeft, layoutTop, panelLeft + panelWidth, layoutTop + 232, 0xE8141B24);
+        int panelHeight = trackerMode ? 258 : 232;
+        int offset = trackerMode ? 26 : 0;
+        graphics.fill(panelLeft, layoutTop, panelLeft + panelWidth, layoutTop + panelHeight, 0xE8141B24);
         graphics.fill(panelLeft, layoutTop, panelLeft + panelWidth, layoutTop + 2, 0xFF54D6FF);
         graphics.drawCenteredString(font, title, cx, layoutTop + 7, 0xFFFFFFFF);
         graphics.drawString(font, "ID de comandos", panelLeft + 8, layoutTop + 14, 0xFFD8E1EA);
         graphics.drawString(font, "Nombre visible", panelLeft + 8, layoutTop + 40, 0xFFD8E1EA);
-        graphics.drawString(font, "Coordenadas", panelLeft + 8, layoutTop + 66, 0xFFD8E1EA);
-        graphics.drawString(font, "Dimensión", panelLeft + 8, layoutTop + 92, 0xFFD8E1EA);
-        graphics.drawString(font, "Color HEX", panelLeft + 8, layoutTop + 119, 0xFFD8E1EA);
+        if (trackerMode) graphics.drawString(font, "Jugador a rastrear", panelLeft + 8, layoutTop + 66, 0xFFD8E1EA);
+        graphics.drawString(font, "Coordenadas", panelLeft + 8, layoutTop + 66 + offset, 0xFFD8E1EA);
+        graphics.drawString(font, "Dimensión", panelLeft + 8, layoutTop + 92 + offset, 0xFFD8E1EA);
+        graphics.drawString(font, "Color HEX", panelLeft + 8, layoutTop + 119 + offset, 0xFFD8E1EA);
         super.render(graphics, mouseX, mouseY, partialTick);
         if (colorPickerOpen) renderColorPicker(graphics);
         else if (iconPickerOpen) renderIconPicker(graphics);
