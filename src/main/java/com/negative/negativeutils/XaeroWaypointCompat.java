@@ -35,28 +35,33 @@ public final class XaeroWaypointCompat {
             if (!(table instanceof Collection<?>)) return;
             @SuppressWarnings("rawtypes") Collection collection = (Collection) table;
 
-            collection.clear();
+            // Construimos primero la nueva tabla para no dejar a Xaero vacio
+            // si una entrada concreta provoca una excepcion.
+            java.util.List<Object> replacement = new java.util.ArrayList<>();
             String dimension = mc.level.dimension().location().toString();
+            Class<?> waypointClass = Class.forName(WAYPOINT);
+            Constructor<?> constructor = waypointClass.getConstructor(
+                    int.class, int.class, int.class, String.class, String.class, int.class);
+
             for (WaypointSavedData.Waypoint wp : WaypointClientData.getWaypoints()) {
                 if (!wp.visible() || !wp.dimension().equals(dimension)) continue;
 
                 Vec3 position = WaypointClientData.resolvePosition(wp);
                 if (position == null) continue;
 
-                Class<?> waypointClass = Class.forName(WAYPOINT);
-                Constructor<?> constructor = waypointClass.getConstructor(
-                        int.class, int.class, int.class, String.class, String.class, int.class);
+                String icon = wp.icon();
+                if (icon == null || icon.isEmpty()) icon = "◆";
+                else icon = icon.substring(0, icon.offsetByCodePoints(0, 1));
 
-                Object xaeroWaypoint = constructor.newInstance(
+                replacement.add(constructor.newInstance(
                         (int) Math.floor(position.x),
                         (int) Math.floor(position.y),
                         (int) Math.floor(position.z),
-                        wp.name(),
-                        wp.icon().isEmpty() ? "◆" : wp.icon().substring(0, 1),
-                        toXaeroColor(wp.color()));
-
-                collection.add(xaeroWaypoint);
+                        wp.name(), icon, toXaeroColor(wp.color())));
             }
+
+            collection.clear();
+            collection.addAll(replacement);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             // Xaero es opcional y sus internals pueden cambiar entre versiones.
         }
