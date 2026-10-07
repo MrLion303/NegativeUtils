@@ -26,6 +26,7 @@ public final class DiscordTokenScreen extends Screen {
                 Component.literal("Token del bot")
         );
         tokenInput.setMaxLength(256);
+        NegativeUtilsGuiStyle.styleField(tokenInput);
         tokenInput.setFormatter((value, cursor) ->
                 FormattedCharSequence.forward(
                         "*".repeat(value.length()),
