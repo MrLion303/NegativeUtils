@@ -28,7 +28,7 @@ public final class CameraClientEvents {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
         CameraClientData.Active camera = CameraClientData.getActive();
-        if (mc.player == null || mc.level == null || camera == null) {
+        if (mc.player == null || mc.level == null || camera == null || mc.screen != null) {
             rightHeld = false;
             return;
         }
@@ -67,9 +67,7 @@ public final class CameraClientEvents {
         if (mc.player == null) return;
 
         GuiGraphics graphics = event.getGuiGraphics();
-        String text = CameraClientData.getActive().forceLook()
-                ? "Cámara fijada"
-                : "Click derecho para fijar";
+        String text = "Click derecho para fijar";
         graphics.drawCenteredString(mc.font, text, graphics.guiWidth() / 2,
                 graphics.guiHeight() - 59, 0xFFFFFFFF);
     }
