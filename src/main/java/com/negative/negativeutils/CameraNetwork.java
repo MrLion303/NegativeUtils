@@ -63,7 +63,7 @@ public final class CameraNetwork {
 
     private record SavePacket(UUID id, String commandId, String name, String targetType,
                               String dimension, double x, double y, double z,
-                              int entityId, String playerName, boolean forceLook) {
+                              int entityId, String playerName, UUID playerUuid, boolean forceLook) {
         static void encode(SavePacket p, FriendlyByteBuf b) {
             b.writeBoolean(p.id != null);
             if (p.id != null) b.writeUUID(p.id);
@@ -146,7 +146,7 @@ public final class CameraNetwork {
 
         static OpenPacket edit(CameraSavedData.Camera c) {
             return new OpenPacket(true, c.id(), c.commandId(), c.name(), c.targetType(),
-                    c.dimension(), c.x(), c.y(), c.z(), c.entityId(), c.playerName(), c.forceLook());
+                    c.dimension(), c.x(), c.y(), c.z(), c.entityId(), c.playerName(), c.playerUuid(), c.forceLook());
         }
 
         static void encode(OpenPacket p, FriendlyByteBuf b) {
@@ -156,7 +156,10 @@ public final class CameraNetwork {
             b.writeUtf(p.commandId, 48); b.writeUtf(p.name, 48); b.writeUtf(p.targetType, 8);
             b.writeUtf(p.dimension, 256);
             b.writeDouble(p.x); b.writeDouble(p.y); b.writeDouble(p.z);
-            b.writeInt(p.entityId); b.writeUtf(p.playerName, 32); b.writeBoolean(p.forceLook);
+            b.writeInt(p.entityId); b.writeUtf(p.playerName, 32);
+            b.writeBoolean(p.playerUuid != null);
+            if (p.playerUuid != null) b.writeUUID(p.playerUuid);
+            b.writeBoolean(p.forceLook);
         }
 
         static OpenPacket decode(FriendlyByteBuf b) {
@@ -179,7 +182,7 @@ public final class CameraNetwork {
 
     private record ShowPacket(UUID id, String commandId, String name, String targetType,
                               String dimension, double x, double y, double z,
-                              int entityId, String playerName, boolean forceLook) {
+                              int entityId, String playerName, UUID playerUuid, boolean forceLook) {
         static ShowPacket from(CameraSavedData.Camera c) {
             return new ShowPacket(c.id(), c.commandId(), c.name(), c.targetType(), c.dimension(),
                     c.x(), c.y(), c.z(), c.entityId(), c.playerName(), c.forceLook());
@@ -203,7 +206,7 @@ public final class CameraNetwork {
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> CameraClientData.show(new CameraClientData.Active(
                             p.id(), p.commandId(), p.name(), p.targetType(), p.dimension(),
-                            p.x(), p.y(), p.z(), p.entityId(), p.playerName(), p.forceLook))));
+                            p.x(), p.y(), p.z(), p.entityId(), p.playerName(), p.playerUuid(), p.forceLook))));
             context.setPacketHandled(true);
         }
     }
