@@ -93,7 +93,7 @@ public final class WaypointCommands {
                         }))));
     }
 
-    private static int createTracked(CommandContext<CommandSourceStack> context) {
+    private static int createTracked(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         String id = WaypointSavedData.sanitizeCommandId(StringArgumentType.getString(context, "id"));
         String playerName = StringArgumentType.getString(context, "jugador");
         ServerPlayer owner = context.getSource().getPlayerOrException();
