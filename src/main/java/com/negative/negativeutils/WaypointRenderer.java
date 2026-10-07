@@ -24,8 +24,8 @@ import java.util.List;
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class WaypointRenderer {
-    private static final float MARKER_SCALE = 0.05F;
-    private static final float LABEL_SCALE = 0.02F;
+    private static final float MARKER_SCALE = 0.11F;
+    private static final float LABEL_SCALE = 0.027F;
 
     private WaypointRenderer() {
     }
@@ -49,6 +49,7 @@ public final class WaypointRenderer {
         Font font = minecraft.font;
         int margin = 8;
         int[] rows = new int[4];
+        int xaeroOffset = NegativeUtilsHudLayout.topLeftOffset(minecraft, graphics.guiWidth(), graphics.guiHeight());
         int shown = Math.min(waypoints.size(), 32);
         for (int index = 0; index < shown; index++) {
             WaypointSavedData.Waypoint waypoint = waypoints.get(index);
@@ -66,7 +67,7 @@ public final class WaypointRenderer {
             boolean right = corner == 1 || corner == 3;
             boolean bottom = corner == 2 || corner == 3;
             int x = right ? graphics.guiWidth() - margin - rowWidth : margin;
-            int y = bottom ? graphics.guiHeight() - margin - 34 - row * 36 : margin + row * 36;
+            int y = bottom ? graphics.guiHeight() - margin - 34 - row * 36 : margin + xaeroOffset + row * 36;
             graphics.fill(x - 3, y - 2, x + rowWidth, y + 34, 0x90000000);
             graphics.drawString(font, waypoint.icon(), x, y + 11, 0xFF000000 | waypoint.color(), true);
             if (!waypoint.name().isBlank()) {
