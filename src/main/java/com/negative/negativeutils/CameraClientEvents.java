@@ -140,8 +140,18 @@ public final class CameraClientEvents {
 
         GuiGraphics graphics = event.getGuiGraphics();
         String text = "Click derecho para fijar";
-        graphics.drawCenteredString(mc.font, text, graphics.guiWidth() / 2,
-                graphics.guiHeight() - 59, 0xFFFFFFFF);
+        int centerX = graphics.guiWidth() / 2;
+        int textY = graphics.guiHeight() - 59;
+        int textWidth = mc.font.width(text);
+        int paddingX = 6;
+        int paddingY = 3;
+        int left = centerX - textWidth / 2 - paddingX;
+        int right = centerX + (textWidth + 1) / 2 + paddingX;
+        int top = textY - paddingY;
+        int bottom = textY + mc.font.lineHeight + paddingY;
+
+        graphics.fill(left, top, right, bottom, 0xAA000000);
+        graphics.drawCenteredString(mc.font, text, centerX, textY, 0xFFFFFFFF);
 
         if (transitioning) {
             float progress = transitionTick / (float) Math.max(1, transitionLength);
