@@ -160,7 +160,7 @@ public class AdminPanelScreen extends Screen {
     private EditBox field(int x, int y, int w, String hint, int maxLength) {
         EditBox input = new EditBox(font, x, y, w, 20, Component.literal(hint));
         input.setMaxLength(maxLength);
-        input.setHint(Component.literal(hint));
+        NegativeUtilsGuiStyle.styleField(input);
         return input;
     }
 
