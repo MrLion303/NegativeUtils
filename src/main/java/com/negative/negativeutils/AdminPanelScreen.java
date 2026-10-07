@@ -72,25 +72,25 @@ public class AdminPanelScreen extends Screen {
                     }).bounds(panelLeft + 14, y, 162, 20).build());
         }
 
-        nameInput = field(editorLeft, 54, fieldWidth, "", 32);
+        nameInput = field(editorLeft, 56, fieldWidth, "", 32);
         addRenderableWidget(nameInput);
 
         int smallWidth = Math.max(36, (fieldWidth - 12) / 3);
-        int dateY = 98;
+        int dateY = 106;
         dayInput = numberField(editorLeft, dateY, smallWidth, 2);
         monthInput = numberField(editorLeft + smallWidth + 6, dateY, smallWidth, 2);
         yearInput = numberField(editorLeft + (smallWidth + 6) * 2, dateY,
                 fieldWidth - (smallWidth + 6) * 2, 4);
 
-        int timeY = 126;
+        int timeY = 154;
         hourInput = numberField(editorLeft, timeY, smallWidth, 2);
         minuteInput = numberField(editorLeft + smallWidth + 6, timeY, smallWidth, 2);
         secondInput = numberField(editorLeft + (smallWidth + 6) * 2, timeY,
                 fieldWidth - (smallWidth + 6) * 2, 2);
 
-        displayTextInput = field(editorLeft, 174, fieldWidth, "", 100);
+        displayTextInput = field(editorLeft, 192, fieldWidth, "", 100);
         int colorWidth = Math.min(86, Math.max(70, fieldWidth - 74));
-        colorInput = field(editorLeft, 206, colorWidth, "", 6);
+        colorInput = field(editorLeft, 224, colorWidth, "", 6);
         colorInput.setValue("FFFFFF");
         colorInput.setFilter(text -> text.length() <= 6
                 && text.chars().allMatch(character -> Character.digit(character, 16) >= 0));
@@ -105,7 +105,7 @@ public class AdminPanelScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.literal("Elegir color"),
                 button -> openColorPicker())
-                .bounds(editorLeft + colorWidth + 6, 206, fieldWidth - colorWidth - 6, 20)
+                .bounds(editorLeft + colorWidth + 6, 224, fieldWidth - colorWidth - 6, 20)
                 .build());
 
         addRenderableWidget(Button.builder(
@@ -116,13 +116,13 @@ public class AdminPanelScreen extends Screen {
                     setDateFields(target);
                     button.setMessage(Component.literal(
                             monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"));
-                }).bounds(editorLeft, 238, fieldWidth, 20).build());
+                }).bounds(editorLeft, 256, fieldWidth, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal(POSITION_LABELS[selectedPosition]),
                 button -> {
                     selectedPosition = (selectedPosition + 1) % POSITIONS.length;
                     button.setMessage(Component.literal(POSITION_LABELS[selectedPosition]));
-                }).bounds(editorLeft, 270, fieldWidth, 20).build());
+                }).bounds(editorLeft, 288, fieldWidth, 20).build());
 
         int actionY = height - 52;
         addRenderableWidget(Button.builder(Component.literal("Guardar"),
@@ -416,22 +416,23 @@ public class AdminPanelScreen extends Screen {
 
         graphics.fill(dividerX, 40, dividerX + 1, height - 24, 0x554C5968);
 
-        graphics.drawString(font, "Fecha", editorLeft, 72, 0xFFD8E1EA);
+        graphics.drawString(font, "Nombre", editorLeft, 42, 0xFFD8E1EA);
+        graphics.drawString(font, "Fecha", editorLeft, 84, 0xFFD8E1EA);
         graphics.drawString(font,
                 monterreyTime ? "Monterrey (UTC-6)" : "UTC",
-                editorLeft + 78, 72, 0xFF9FAAB8);
-        graphics.drawString(font, "Día", editorLeft, 92, 0xFF9FAAB8);
-        graphics.drawString(font, "Mes", editorLeft + 49, 92, 0xFF9FAAB8);
-        graphics.drawString(font, "Año", editorLeft + 98, 92, 0xFF9FAAB8);
+                editorLeft + 78, 84, 0xFF9FAAB8);
+        graphics.drawString(font, "Día", editorLeft, 98, 0xFF9FAAB8);
+        graphics.drawString(font, "Mes", editorLeft + 49, 98, 0xFF9FAAB8);
+        graphics.drawString(font, "Año", editorLeft + 98, 98, 0xFF9FAAB8);
 
-        graphics.drawString(font, "Hora", editorLeft, 120, 0xFFD8E1EA);
-        graphics.drawString(font, "Hora", editorLeft, 140, 0xFF9FAAB8);
-        graphics.drawString(font, "Min", editorLeft + 49, 140, 0xFF9FAAB8);
-        graphics.drawString(font, "Seg", editorLeft + 98, 140, 0xFF9FAAB8);
+        graphics.drawString(font, "Hora", editorLeft, 132, 0xFFD8E1EA);
+        graphics.drawString(font, "H", editorLeft, 146, 0xFF9FAAB8);
+        graphics.drawString(font, "Min", editorLeft + 49, 146, 0xFF9FAAB8);
+        graphics.drawString(font, "Seg", editorLeft + 98, 146, 0xFF9FAAB8);
 
-        graphics.drawString(font, "Texto debajo del contador", editorLeft, 168, 0xFFD8E1EA);
-        graphics.drawString(font, "Color", editorLeft, 200, 0xFFD8E1EA);
-        graphics.drawString(font, "Posición", editorLeft, 232, 0xFFD8E1EA);
+        graphics.drawString(font, "Texto debajo del contador", editorLeft, 184, 0xFFD8E1EA);
+        graphics.drawString(font, "Color", editorLeft, 216, 0xFFD8E1EA);
+        graphics.drawString(font, "Posición", editorLeft, 248, 0xFFD8E1EA);
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
