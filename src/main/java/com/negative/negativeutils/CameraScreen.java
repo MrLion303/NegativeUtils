@@ -79,6 +79,11 @@ public final class CameraScreen extends Screen {
         addRenderableWidget(yInput);
         addRenderableWidget(zInput);
 
+        addRenderableWidget(entityIdInput);
+        addRenderableWidget(playerInput);
+        entityIdInput.visible = "ENTITY".equals(targetType);
+        playerInput.visible = "PLAYER".equals(targetType);
+
         addRenderableWidget(Button.builder(Component.literal("Coordenadas"), b -> setTarget("COORDS"))
                 .bounds(contentLeft, top + 188, 120, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Entidad"), b -> setTarget("ENTITY"))
@@ -114,6 +119,8 @@ public final class CameraScreen extends Screen {
 
     private void setTarget(String type) {
         targetType = type;
+        entityIdInput.visible = "ENTITY".equals(type);
+        playerInput.visible = "PLAYER".equals(type);
         status = Component.empty();
     }
 
@@ -186,13 +193,6 @@ public final class CameraScreen extends Screen {
         }
 
         super.render(graphics, mouseX, mouseY, partialTick);
-
-        // Only show the relevant target field.
-        if ("ENTITY".equals(targetType)) {
-            entityIdInput.render(graphics, mouseX, mouseY, partialTick);
-        } else if ("PLAYER".equals(targetType)) {
-            playerInput.render(graphics, mouseX, mouseY, partialTick);
-        }
     }
 
     @Override
