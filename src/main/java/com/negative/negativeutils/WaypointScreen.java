@@ -25,6 +25,7 @@ public class WaypointScreen extends Screen {
     private int color, draftColor;
     private String selectedIcon, selectedCorner;
     private boolean colorPickerOpen, iconPickerOpen;
+    private int layoutTop;
 
     public WaypointScreen(UUID id, String commandId, String name, String dimension,
                           double x, double y, double z, int color, String icon, String corner) {
@@ -45,40 +46,46 @@ public class WaypointScreen extends Screen {
     @Override
     protected void init() {
         int cx = width / 2;
-        int left = cx - 100;
-        commandIdInput = field(left, 39, 200, "Identificador (ej. waypoint_1)", 48, initialCommandId);
-        nameInput = field(left, 65, 200, "Nombre visible", 32, initialName);
-        xInput = field(left, 91, 62, "X", 16, String.valueOf(initialX));
-        yInput = field(left + 69, 91, 62, "Y", 16, String.valueOf(initialY));
-        zInput = field(left + 138, 91, 62, "Z", 16, String.valueOf(initialZ));
-        dimensionInput = field(left, 117, 200, "Dimensión", 256, initialDimension);
-        colorInput = field(left + 80, 144, 72, "HEX", 6, String.format(Locale.ROOT, "%06X", color));
+        int panelWidth = Math.min(300, Math.max(220, width - 16));
+        int left = (width - panelWidth) / 2;
+        int contentWidth = Math.min(230, panelWidth - 16);
+        layoutTop = Math.max(8, (height - 245) / 2);
+        int top = layoutTop;
+        commandIdInput = field(left, top + 22, contentWidth, "Identificador (ej. waypoint_1)", 48, initialCommandId);
+                nameInput = field(left, top + 48, contentWidth, "Nombre visible", 32, initialName);
+        int coordinateWidth = (contentWidth - 8) / 3;
+        xInput = field(left, top + 74, coordinateWidth, "X", 16, String.valueOf(initialX));
+        yInput = field(left + coordinateWidth + 4, top + 74, coordinateWidth, "Y", 16, String.valueOf(initialY));
+        zInput = field(left + (coordinateWidth + 4) * 2, top + 74, coordinateWidth, "Z", 16, String.valueOf(initialZ));
+        dimensionInput = field(left, top + 100, contentWidth, "Dimensión", 256, initialDimension);
+        colorInput = field(left + contentWidth - 72, top + 127, 72, "HEX", 6, String.format(Locale.ROOT, "%06X", color));
         colorInput.setFilter(value -> value.length() <= 6
                 && value.chars().allMatch(character -> Character.digit(character, 16) >= 0));
         addRenderableWidget(commandIdInput); addRenderableWidget(nameInput);
         addRenderableWidget(xInput); addRenderableWidget(yInput); addRenderableWidget(zInput);
         addRenderableWidget(dimensionInput); addRenderableWidget(colorInput);
+        int colorButtonWidth = 82;
         iconButton = Button.builder(Component.literal("Icono: " + selectedIcon), button -> iconPickerOpen = true)
-                .bounds(left, 143, 75, 20).build();
+                .bounds(left, top + 126, Math.min(90, contentWidth - colorButtonWidth - 6), 20).build();
         addRenderableWidget(iconButton);
         addRenderableWidget(Button.builder(Component.literal("Elegir color"), button -> openColorPicker())
-                .bounds(left + 155, 143, 75, 20).build());
+                .bounds(left + contentWidth - 82, top + 126, 82, 20).build());
         addRenderableWidget(Button.builder(Component.literal(cornerLabel(selectedCorner)), button -> {
             int index = cornerIndex(selectedCorner);
             selectedCorner = CORNERS[(index + 1) % CORNERS.length];
             button.setMessage(Component.literal(cornerLabel(selectedCorner)));
-        }).bounds(left, 169, 200, 20).build());
+        }).bounds(left, top + 152, contentWidth, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("Guardar"), button -> save())
-                .bounds(cx - 100, 195, 95, 20).build());
+                .bounds(cx - 100, top + 178, 95, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Activar / Desactivar"), button -> {
             if (id != null) WaypointNetwork.toggle(id);
-        }).bounds(cx + 5, 195, 95, 20).build());
+        }).bounds(cx + 5, top + 178, 95, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Eliminar"), button -> {
             if (id != null) { WaypointNetwork.delete(id); onClose(); }
-        }).bounds(cx - 100, 219, 95, 20).build());
+        }).bounds(cx - 100, top + 202, 95, 20).build());
         addRenderableWidget(Button.builder(Component.literal("Cerrar"), button -> onClose())
-                .bounds(cx + 5, 219, 95, 20).build());
+                .bounds(cx + 5, top + 202, 95, 20).build());
     }
 
     private String cornerLabel(String corner) {
@@ -235,14 +242,16 @@ public class WaypointScreen extends Screen {
         renderBackground(graphics);
         NegativeUtilsGuiStyle.renderFrame(graphics, width, height);
         int cx = width / 2;
-        graphics.fill(cx - 115, 17, cx + 115, 243, 0xE8141B24);
-        graphics.fill(cx - 115, 17, cx + 115, 19, 0xFF54D6FF);
-        graphics.drawCenteredString(font, title, cx, 24, 0xFFFFFFFF);
-        graphics.drawString(font, "ID de comandos", cx - 100, 29, 0xFFD8E1EA);
-        graphics.drawString(font, "Nombre visible", cx - 100, 55, 0xFFD8E1EA);
-        graphics.drawString(font, "Coordenadas", cx - 100, 81, 0xFFD8E1EA);
-        graphics.drawString(font, "Dimensión", cx - 100, 107, 0xFFD8E1EA);
-        graphics.drawString(font, "Color HEX", cx - 20, 137, 0xFFD8E1EA);
+        int panelWidth = Math.min(300, Math.max(220, width - 16));
+        int panelLeft = (width - panelWidth) / 2;
+        graphics.fill(panelLeft, layoutTop, panelLeft + panelWidth, layoutTop + 232, 0xE8141B24);
+        graphics.fill(panelLeft, layoutTop, panelLeft + panelWidth, layoutTop + 2, 0xFF54D6FF);
+        graphics.drawCenteredString(font, title, cx, layoutTop + 7, 0xFFFFFFFF);
+        graphics.drawString(font, "ID de comandos", panelLeft + 8, layoutTop + 14, 0xFFD8E1EA);
+        graphics.drawString(font, "Nombre visible", panelLeft + 8, layoutTop + 40, 0xFFD8E1EA);
+        graphics.drawString(font, "Coordenadas", panelLeft + 8, layoutTop + 66, 0xFFD8E1EA);
+        graphics.drawString(font, "Dimensión", panelLeft + 8, layoutTop + 92, 0xFFD8E1EA);
+        graphics.drawString(font, "Color HEX", panelLeft + 8, layoutTop + 119, 0xFFD8E1EA);
         super.render(graphics, mouseX, mouseY, partialTick);
         if (colorPickerOpen) renderColorPicker(graphics);
         else if (iconPickerOpen) renderIconPicker(graphics);
