@@ -33,6 +33,7 @@ public class TimeDelayScreen extends Screen {
         );
 
         secondsInput.setMaxLength(5);
+        NegativeUtilsGuiStyle.styleField(secondsInput);
         secondsInput.setValue(Integer.toString(currentDelaySeconds));
         secondsInput.setFilter(text ->
                 text.isEmpty() || text.chars().allMatch(Character::isDigit)
