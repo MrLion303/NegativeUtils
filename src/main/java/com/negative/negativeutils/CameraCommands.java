@@ -96,13 +96,13 @@ public final class CameraCommands {
             context.getSource().sendFailure(Component.literal("No existe esa cámara."));
             return 0;
         }
-        CameraNetwork.show(player, camera);
+        CameraNetwork.showAll(camera);
         return Command.SINGLE_SUCCESS;
     }
 
     private static int hide(CommandContext<CommandSourceStack> context)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
-        CameraNetwork.hide(context.getSource().getPlayerOrException());
+        CameraNetwork.hideAll();
         return Command.SINGLE_SUCCESS;
     }
 
