@@ -34,9 +34,18 @@ public final class CameraNetwork {
     }
 
     public static void openCreate(ServerPlayer player, String id) {
+        var position = NegativeUtilsTarget.getLookedBlockPosition(player);
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                 OpenPacket.create(id, player.level().dimension().location().toString(),
-                        player.getX(), player.getY(), player.getZ()));
+                        position.x, position.y, position.z));
+    }
+
+    public static void showAll(CameraSavedData.Camera camera) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), ShowPacket.from(camera));
+    }
+
+    public static void hideAll() {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), new HidePacket());
     }
 
     public static void openEdit(ServerPlayer player, CameraSavedData.Camera camera) {
