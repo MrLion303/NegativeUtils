@@ -215,8 +215,9 @@ public final class WaypointNetwork {
                               double x, double y, double z, int color, String icon, String corner,
                               boolean tracker, String trackedPlayerName) {
         static OpenPacket create(ServerPlayer player, String commandId, boolean tracker) {
+            var position = NegativeUtilsTarget.getLookedBlockPosition(player);
             return new OpenPacket(false, null, commandId, "", player.level().dimension().location().toString(),
-                    player.getX(), player.getY(), player.getZ(), 0x40D8FF, "◆", "TOP_LEFT",
+                    position.x, position.y, position.z, 0x40D8FF, "◆", "TOP_LEFT",
                     tracker, "");
         }
         static OpenPacket edit(WaypointSavedData.Waypoint w) {
