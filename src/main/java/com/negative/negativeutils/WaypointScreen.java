@@ -293,7 +293,9 @@ public class WaypointScreen extends Screen {
     }
 
     private void renderIconPicker(GuiGraphics graphics) {
-        graphics.fill(0, 0, width, height, 0xFF101318);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 1000);
+        graphics.fill(0, 0, width, height, 0xD0101318);
 
         int cx = width / 2;
         int left = cx - 125;
@@ -321,10 +323,13 @@ public class WaypointScreen extends Screen {
 
         graphics.fill(cx - 45, 154, cx + 45, 178, 0xFF6B3B3B);
         graphics.drawCenteredString(font, "Cancelar", cx, 161, 0xFFFFFFFF);
+        graphics.pose().popPose();
     }
 
     private void renderColorPicker(GuiGraphics graphics) {
-        graphics.fill(0, 0, width, height, 0xFF101318);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 1000);
+        graphics.fill(0, 0, width, height, 0xD0101318);
 
         int cx = width / 2;
         int panelLeft = cx - 92;
@@ -363,6 +368,7 @@ public class WaypointScreen extends Screen {
         graphics.drawCenteredString(font, "Aplicar", cx - 50, 189, 0xFFFFFFFF);
         graphics.fill(cx + 4, 182, cx + 96, 206, 0xFF6B3B3B);
         graphics.drawCenteredString(font, "Cancelar", cx + 50, 189, 0xFFFFFFFF);
+        graphics.pose().popPose();
     }
 
     @Override
