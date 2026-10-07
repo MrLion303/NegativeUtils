@@ -17,6 +17,7 @@ public final class DiscordEmoteOverlay {
 
     private final List<Choice> choices = new ArrayList<>();
     private int scrollRow;
+    private boolean draggingScrollbar;
 
     public DiscordEmoteOverlay() {
         DiscordEmoteClientData.getEmotes().forEach((name, codePoint) ->
@@ -53,6 +54,35 @@ public final class DiscordEmoteOverlay {
         int rows = Math.max(1, (choices.size() + COLUMNS - 1) / COLUMNS);
         int maxScroll = Math.max(0, rows - ROWS);
         scrollRow = Math.max(0, Math.min(maxScroll, scrollRow - (int) Math.signum(amount)));
+    }
+
+    public boolean beginScrollbarDrag(double mouseX, double mouseY, int width, int height) {
+        Bounds b = bounds(width, height);
+        Scrollbar s = scrollbar(b);
+        if (mouseX >= s.left && mouseX <= s.right && mouseY >= s.thumbTop && mouseY <= s.thumbTop + s.thumbHeight) {
+            draggingScrollbar = true;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean dragScrollbar(double mouseY, int width, int height) {
+        if (!draggingScrollbar) return false;
+        Bounds b = bounds(width, height);
+        Scrollbar s = scrollbar(b);
+        int rows = Math.max(1, (choices.size() + COLUMNS - 1) / COLUMNS);
+        int maxScroll = Math.max(0, rows - ROWS);
+        if (maxScroll > 0) {
+            double progress = (mouseY - s.trackTop - s.thumbHeight / 2.0) / Math.max(1, s.trackHeight - s.thumbHeight);
+            scrollRow = Math.max(0, Math.min(maxScroll, (int) Math.round(progress * maxScroll)));
+        }
+        return true;
+    }
+
+    public boolean endScrollbarDrag() {
+        if (!draggingScrollbar) return false;
+        draggingScrollbar = false;
+        return true;
     }
 
     public boolean contains(double mouseX, double mouseY, int width, int height) {
@@ -111,18 +141,36 @@ public final class DiscordEmoteOverlay {
                         x + BUTTON / 2, y + 9, 0xFFFFFFFF);
             }
         }
+
+        Scrollbar s = scrollbar(b);
+        graphics.fill(s.left, s.trackTop, s.right, s.trackTop + s.trackHeight, 0xFF151B22);
+        graphics.fill(s.left, s.thumbTop, s.right, s.thumbTop + s.thumbHeight, 0xFF667381);
+        graphics.fill(s.left, s.thumbTop, s.right, s.thumbTop + 2, 0xFF9AA7B5);
     }
 
     private Bounds bounds(int width, int height) {
         int panelWidth = COLUMNS * BUTTON + (COLUMNS - 1) * GAP + PANEL_PADDING * 2;
         int panelHeight = ROWS * BUTTON + (ROWS - 1) * GAP + 25;
-        int right = Math.min(width - 6, width - 72 - 6);
-        int left = Math.max(6, right - panelWidth);
+        int buttonCenter = width - 40;
+        int left = Math.max(6, buttonCenter - panelWidth / 2);
+        int right = Math.min(width - 6, left + panelWidth);
+        left = Math.max(6, right - panelWidth);
         int bottom = height - 45;
         int top = Math.max(6, bottom - panelHeight);
         return new Bounds(left, top, right, bottom);
     }
 
+    private Scrollbar scrollbar(Bounds b) {
+        int trackTop = b.top + 20;
+        int trackHeight = b.bottom - trackTop - 7;
+        int rows = Math.max(1, (choices.size() + COLUMNS - 1) / COLUMNS);
+        int maxScroll = Math.max(0, rows - ROWS);
+        int thumbHeight = maxScroll == 0 ? trackHeight : Math.max(14, trackHeight * ROWS / rows);
+        int thumbTop = maxScroll == 0 ? trackTop : trackTop + (trackHeight - thumbHeight) * scrollRow / maxScroll;
+        return new Scrollbar(b.right - 6, trackTop, b.right - 2, trackHeight, thumbTop, thumbHeight);
+    }
+
     private record Bounds(int left, int top, int right, int bottom) {}
+    private record Scrollbar(int left, int trackTop, int right, int trackHeight, int thumbTop, int thumbHeight) {}
     private record Choice(String name, String text, Integer atlasCodePoint) {}
 }
