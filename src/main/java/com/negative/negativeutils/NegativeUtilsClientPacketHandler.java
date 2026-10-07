@@ -42,6 +42,10 @@ final class NegativeUtilsClientPacketHandler {
         );
     }
 
+    static void openWaypointList() {
+        Minecraft.getInstance().setScreen(new WaypointListScreen());
+    }
+
     static void acceptDiscordEmotes(Map<String, Integer> mapping, byte[] atlas) {
         DiscordEmoteClientData.accept(mapping, atlas);
     }
