@@ -215,10 +215,10 @@ public final class WaypointRenderer {
                     anchor.z,
                     yaw,
                     Math.round(distance) + " m",
-                    LABEL_SCALE,
+                    labelScale,
                     0xFFFFFFFF,
                     Font.DisplayMode.NORMAL,
-                    0
+                    0x65000000
             );
         }
 
