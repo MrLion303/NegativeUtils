@@ -50,9 +50,6 @@ public final class CameraClientData {
     public record Active(
             UUID id, String commandId, String name, String targetType,
             String dimension, double x, double y, double z, int entityId,
-            String playerName, boolean forceLook) {
-        public UUID playerUuid() {
-            return null;
-        }
+            String playerName, UUID playerUuid, boolean forceLook) {
     }
 }
