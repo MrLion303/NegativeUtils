@@ -52,8 +52,10 @@ public final class WaypointNetwork {
     }
 
     public static void save(UUID id, String commandId, String name, String dimension,
-                            double x, double y, double z, int color, String icon, String corner) {
-        CHANNEL.sendToServer(new SavePacket(id, commandId, name, dimension, x, y, z, color, icon, corner, false, ""));
+                            double x, double y, double z, int color, String icon, String corner,
+                            boolean tracker, String trackedPlayerName) {
+        CHANNEL.sendToServer(new SavePacket(id, commandId, name, dimension, x, y, z, color, icon, corner,
+                tracker, trackedPlayerName == null ? "" : trackedPlayerName));
     }
 
     public static void toggle(UUID id) { CHANNEL.sendToServer(new TogglePacket(id)); }
