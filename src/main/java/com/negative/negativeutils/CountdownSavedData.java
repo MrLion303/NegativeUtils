@@ -61,8 +61,9 @@ public class CountdownSavedData extends SavedData {
     public Countdown create(String name, long durationMillis, String text, int color, String position) {
         String clean = sanitizeName(name);
         if (clean.isBlank()) clean = nextAutomaticName();
-        Countdown countdown = new Countdown(UUID.randomUUID(), clean, false, false,
-                0, Math.max(0, durationMillis), text, color, position);
+        long duration = Math.max(0, durationMillis);
+        Countdown countdown = new Countdown(UUID.randomUUID(), clean, duration > 0, duration == 0,
+                System.currentTimeMillis() + duration, duration, text, color, position);
         countdowns.add(countdown);
         setDirty();
         return countdown;
