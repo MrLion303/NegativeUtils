@@ -23,6 +23,7 @@ public final class NegativeUtilsMod {
         TrailNetwork.register();
         TimeDelayNetwork.register();
         WaypointNetwork.register();
+        CameraNetwork.register();
         CommandSequenceNetwork.register();
         DiscordEmoteNetwork.register();
     }
