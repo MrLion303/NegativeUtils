@@ -161,7 +161,7 @@ public class WaypointScreen extends Screen {
     private EditBox field(int x, int y, int width, String hint, int maxLength, String value) {
         EditBox input = new EditBox(font, x, y, width, 18, Component.literal(hint));
         input.setMaxLength(maxLength);
-        input.setHint(Component.literal(hint));
+        input.setHint(Component.empty());
         input.setValue(value == null ? "" : value);
         return input;
     }
