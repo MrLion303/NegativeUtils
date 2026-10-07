@@ -23,40 +23,38 @@ import net.minecraftforge.fml.common.Mod;
 )
 public final class DiscordEmotePickerEvents {
     private static final Map<Screen, Button> CHAT_BUTTONS = new WeakHashMap<>();
+    private static final Map<Screen, DiscordEmoteOverlay> OVERLAYS = new WeakHashMap<>();
+    private static final Map<Screen, EditBox> CHAT_INPUTS = new WeakHashMap<>();
 
     private DiscordEmotePickerEvents() {
     }
 
     @SubscribeEvent
     public static void onChatScreenInit(ScreenEvent.Init.Post event) {
-        if (!(event.getScreen() instanceof ChatScreen chatScreen)) {
-            return;
-        }
+        if (!(event.getScreen() instanceof ChatScreen)) return;
 
         EditBox chatInput = event.getListenersList().stream()
                 .filter(EditBox.class::isInstance)
                 .map(EditBox.class::cast)
                 .findFirst()
                 .orElse(null);
-        if (chatInput == null) {
-            return;
-        }
+        if (chatInput == null) return;
+
+        Screen screen = event.getScreen();
+        CHAT_INPUTS.put(screen, chatInput);
 
         Button button = new Button(
                 Button.builder(
                         Component.literal("Emotes"),
                         ignored -> DiscordEmoteClientData.ensureEmoteFontLoaded(() ->
-                                Minecraft.getInstance().setScreen(
-                                        new DiscordEmotePickerScreen(chatInput.getValue())
-                                )
-                        )
+                                OVERLAYS.computeIfAbsent(screen, ignoredScreen -> new DiscordEmoteOverlay()))
                 ).bounds(
-                        event.getScreen().width - 72,
-                        event.getScreen().height - 42,
+                        screen.width - 72,
+                        screen.height - 42,
                         64,
                         20
                 ).tooltip(
-                        Tooltip.create(Component.literal("Insertar un emote de Discord"))
+                        Tooltip.create(Component.literal("Mostrar emotes de Discord"))
                 )
         ) {
             @Override
@@ -75,8 +73,6 @@ public final class DiscordEmotePickerEvents {
                         ? 0xB0182028
                         : 0x90101820;
                 graphics.fill(getX(), getY(), getX() + width, getY() + height, background);
-                graphics.fill(getX(), getY(), getX() + width, getY() + 1, 0xFF54D6FF);
-                graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0xFF54D6FF);
                 graphics.drawCenteredString(
                         Minecraft.getInstance().font,
                         getMessage(),
@@ -88,12 +84,46 @@ public final class DiscordEmotePickerEvents {
         };
 
         event.addListener(button);
-        CHAT_BUTTONS.put(chatScreen, button);
+        CHAT_BUTTONS.put(screen, button);
     }
 
     @SubscribeEvent
     public static void onChatScreenRender(ScreenEvent.Render.Post event) {
-        // El botón ya forma parte de la lista de widgets de la pantalla.
-        // Renderizarlo otra vez aquí provocaba un segundo dibujo sobre el mismo botón.
+        if (!(event.getScreen() instanceof ChatScreen)) return;
+        DiscordEmoteOverlay overlay = OVERLAYS.get(event.getScreen());
+        EditBox chatInput = CHAT_INPUTS.get(event.getScreen());
+        if (overlay != null && chatInput != null) {
+            overlay.render(event.getGuiGraphics(), event.getScreen().width, event.getScreen().height,
+                    event.getMouseX(), event.getMouseY());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChatScreenClick(ScreenEvent.MouseButtonPressed.Pre event) {
+        if (!(event.getScreen() instanceof ChatScreen)) return;
+        DiscordEmoteOverlay overlay = OVERLAYS.get(event.getScreen());
+        EditBox chatInput = CHAT_INPUTS.get(event.getScreen());
+        if (overlay == null || chatInput == null || event.getButton() != 0) return;
+
+        if (overlay.contains(event.getMouseX(), event.getMouseY(),
+                event.getScreen().width, event.getScreen().height)) {
+            overlay.click(event.getMouseX(), event.getMouseY(),
+                    event.getScreen().width, event.getScreen().height, chatInput);
+            event.setCanceled(true);
+        } else {
+            OVERLAYS.remove(event.getScreen());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChatScreenScroll(ScreenEvent.MouseScrolled.Pre event) {
+        if (!(event.getScreen() instanceof ChatScreen)) return;
+        DiscordEmoteOverlay overlay = OVERLAYS.get(event.getScreen());
+        if (overlay == null) return;
+        if (overlay.contains(event.getMouseX(), event.getMouseY(),
+                event.getScreen().width, event.getScreen().height)) {
+            overlay.scroll(event.getDeltaY());
+            event.setCanceled(true);
+        }
     }
 }
