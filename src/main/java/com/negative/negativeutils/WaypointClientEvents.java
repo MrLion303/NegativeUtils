@@ -21,5 +21,6 @@ public final class WaypointClientEvents {
     @SubscribeEvent
     public static void onDisconnect(ClientPlayerNetworkEvent.LoggingOut event) {
         WaypointClientData.clear();
+        CameraClientData.hide();
     }
 }
