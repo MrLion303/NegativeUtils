@@ -122,7 +122,7 @@ public final class DiscordEmotePickerEvents {
         if (overlay == null) return;
         if (overlay.contains(event.getMouseX(), event.getMouseY(),
                 event.getScreen().width, event.getScreen().height)) {
-            overlay.scroll(event.getDeltaY());
+            overlay.scroll(event.getScrollDelta());
             event.setCanceled(true);
         }
     }
