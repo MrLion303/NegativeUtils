@@ -46,8 +46,10 @@ public final class DiscordEmotePickerEvents {
         Button button = new Button(
                 Button.builder(
                         Component.literal("Emotes"),
-                        ignored -> DiscordEmoteClientData.ensureEmoteFontLoaded(() ->
-                                OVERLAYS.computeIfAbsent(screen, ignoredScreen -> new DiscordEmoteOverlay()))
+                        ignored -> DiscordEmoteClientData.ensureEmoteFontLoaded(() -> {
+                            OVERLAYS.computeIfAbsent(screen, ignoredScreen -> new DiscordEmoteOverlay());
+                            screen.setFocused(chatInput);
+                        })
                 ).bounds(
                         screen.width - 72,
                         screen.height - 42,
@@ -107,11 +109,35 @@ public final class DiscordEmotePickerEvents {
 
         if (overlay.contains(event.getMouseX(), event.getMouseY(),
                 event.getScreen().width, event.getScreen().height)) {
+            if (overlay.beginScrollbarDrag(event.getMouseX(), event.getMouseY(),
+                    event.getScreen().width, event.getScreen().height)) {
+                event.setCanceled(true);
+                return;
+            }
             overlay.click(event.getMouseX(), event.getMouseY(),
                     event.getScreen().width, event.getScreen().height, chatInput);
+            event.getScreen().setFocused(chatInput);
             event.setCanceled(true);
         } else {
             OVERLAYS.remove(event.getScreen());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChatScreenMouseDragged(ScreenEvent.MouseDragged.Pre event) {
+        if (!(event.getScreen() instanceof ChatScreen)) return;
+        DiscordEmoteOverlay overlay = OVERLAYS.get(event.getScreen());
+        if (overlay != null && overlay.dragScrollbar(event.getMouseY(), event.getScreen().width, event.getScreen().height)) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onChatScreenMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
+        if (!(event.getScreen() instanceof ChatScreen)) return;
+        DiscordEmoteOverlay overlay = OVERLAYS.get(event.getScreen());
+        if (overlay != null && overlay.endScrollbarDrag()) {
+            event.setCanceled(true);
         }
     }
 
