@@ -129,6 +129,13 @@ public class WaypointSavedData extends SavedData {
 
     public boolean update(UUID id, String commandId, String name, String dimension, Vec3 pos,
                           int color, String icon, String corner) {
+        Waypoint current = getById(id);
+        return update(id, commandId, name, dimension, pos, color, icon, corner,
+                current == null ? null : current.trackedPlayer());
+    }
+
+    public boolean update(UUID id, String commandId, String name, String dimension, Vec3 pos,
+                          int color, String icon, String corner, UUID trackedPlayer) {
         for (int i = 0; i < waypoints.size(); i++) {
             Waypoint w = waypoints.get(i);
             if (!w.id().equals(id)) continue;
@@ -141,7 +148,7 @@ public class WaypointSavedData extends SavedData {
             if (cleanName.isBlank()) cleanName = w.name();
             waypoints.set(i, new Waypoint(w.id(), w.owner(), cleanId, cleanName, dim.toString(),
                     pos.x, pos.y, pos.z, color & 0xFFFFFF, w.shape(), w.visible(),
-                    sanitizeIcon(icon), sanitizeCorner(corner), w.trackedPlayer()));
+                    sanitizeIcon(icon), sanitizeCorner(corner), trackedPlayer));
             setDirty();
             return true;
         }
