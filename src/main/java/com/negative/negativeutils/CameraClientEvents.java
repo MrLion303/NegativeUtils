@@ -36,8 +36,27 @@ public final class CameraClientEvents {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
         CameraClientData.Active camera = CameraClientData.getActive();
-        if (mc.player == null || mc.level == null || camera == null || mc.screen != null) {
+        if (mc.player == null || mc.level == null || mc.screen != null) {
             rightHeld = false;
+            return;
+        }
+
+        if (camera == null) {
+            if (cameraViewOwned && !transitioning) {
+                beginTransition(mc, false);
+            }
+            if (transitioning) {
+                transitionTick++;
+                float progress = Math.min(1.0F, transitionTick / (float) transitionLength);
+                if (progress >= 0.5F && !transitionToFirstPerson
+                        && transitionFrom != null) {
+                    mc.options.setCameraType(transitionFrom);
+                }
+                if (progress >= 1.0F) {
+                    transitioning = false;
+                    cameraViewOwned = false;
+                }
+            }
             return;
         }
 
