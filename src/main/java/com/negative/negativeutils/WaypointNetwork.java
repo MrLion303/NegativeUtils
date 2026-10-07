@@ -32,6 +32,7 @@ public final class WaypointNetwork {
         CHANNEL.registerMessage(2, TogglePacket.class, TogglePacket::encode, TogglePacket::decode, TogglePacket::handle);
         CHANNEL.registerMessage(3, DeletePacket.class, DeletePacket::encode, DeletePacket::decode, DeletePacket::handle);
         CHANNEL.registerMessage(4, OpenPacket.class, OpenPacket::encode, OpenPacket::decode, OpenPacket::handle);
+        CHANNEL.registerMessage(5, OpenListPacket.class, OpenListPacket::encode, OpenListPacket::decode, OpenListPacket::handle);
     }
 
     public static void openCreate(ServerPlayer player, String commandId) {
@@ -40,6 +41,10 @@ public final class WaypointNetwork {
 
     public static void openEdit(ServerPlayer player, WaypointSavedData.Waypoint waypoint) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), OpenPacket.edit(waypoint));
+    }
+
+    public static void openList(ServerPlayer player) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new OpenListPacket());
     }
 
     public static void save(UUID id, String commandId, String name, String dimension,
@@ -164,6 +169,17 @@ public final class WaypointNetwork {
             NetworkEvent.Context context = supplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> WaypointClientData.setWaypoints(p.list)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    private record OpenListPacket() {
+        static void encode(OpenListPacket p, FriendlyByteBuf b) { }
+        static OpenListPacket decode(FriendlyByteBuf b) { return new OpenListPacket(); }
+        static void handle(OpenListPacket p, Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> NegativeUtilsClientPacketHandler.openWaypointList()));
             context.setPacketHandled(true);
         }
     }
