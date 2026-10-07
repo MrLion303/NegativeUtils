@@ -158,6 +158,7 @@ public final class WaypointRenderer {
 
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
+        RenderSystem.disableDepthTest();
 
         for (WaypointSavedData.Waypoint waypoint
                 : WaypointClientData.getWaypoints()) {
@@ -227,6 +228,7 @@ public final class WaypointRenderer {
         }
 
         buffers.endBatch();
+        RenderSystem.enableDepthTest();
         poseStack.popPose();
     }
 
