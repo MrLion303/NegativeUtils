@@ -1,12 +1,18 @@
 package com.negative.negativeutils;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -40,8 +46,10 @@ public final class WaypointRenderer {
         List<WaypointSavedData.Waypoint> waypoints = WaypointClientData.getWaypoints().stream()
                 .filter(WaypointSavedData.Waypoint::visible)
                 .filter(waypoint -> waypoint.dimension().equals(dimension))
-                .sorted(Comparator.comparingDouble(waypoint -> minecraft.player.position().distanceToSqr(
-                        new Vec3(waypoint.x(), waypoint.y(), waypoint.z()))))
+                .sorted(Comparator.comparingDouble(waypoint -> {
+                    Vec3 position = WaypointClientData.resolvePosition(waypoint);
+                    return position == null ? Double.MAX_VALUE : minecraft.player.position().distanceToSqr(position);
+                }))
                 .toList();
         if (waypoints.isEmpty()) return;
 
@@ -53,8 +61,9 @@ public final class WaypointRenderer {
         int shown = Math.min(waypoints.size(), 32);
         for (int index = 0; index < shown; index++) {
             WaypointSavedData.Waypoint waypoint = waypoints.get(index);
-            double distance = minecraft.player.position().distanceTo(
-                    new Vec3(waypoint.x(), waypoint.y(), waypoint.z()));
+            Vec3 resolved = WaypointClientData.resolvePosition(waypoint);
+            if (resolved == null) continue;
+            double distance = minecraft.player.position().distanceTo(resolved);
             String distanceLabel = Math.round(distance) + " m";
             int rowWidth = Math.max(font.width(waypoint.name()), font.width(distanceLabel)) + 25;
             int corner = switch (waypoint.corner()) {
@@ -91,6 +100,43 @@ public final class WaypointRenderer {
     }
 
     @SubscribeEvent
+    public static void onRenderTrackedPlayer(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null) return;
+
+        Vec3 camera = event.getCamera().getPosition();
+        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
+        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+        boolean throughBlocks = Config.trailsThroughBlocks;
+        if (throughBlocks) RenderSystem.depthMask(false);
+
+        for (WaypointSavedData.Waypoint waypoint : WaypointClientData.getWaypoints()) {
+            if (!waypoint.visible() || !waypoint.tracksPlayer()) continue;
+            Entity target = null;
+            for (Entity candidate : minecraft.level.entitiesForRendering()) {
+                if (candidate.getUUID().equals(waypoint.trackedPlayer())) {
+                    target = candidate;
+                    break;
+                }
+            }
+            if (target == null) continue;
+
+            float r = ((waypoint.color() >> 16) & 255) / 255.0F;
+            float g = ((waypoint.color() >> 8) & 255) / 255.0F;
+            float b = (waypoint.color() & 255) / 255.0F;
+            AABB box = target.getBoundingBox().inflate(0.08D);
+            event.getPoseStack().pushPose();
+            event.getPoseStack().translate(-camera.x, -camera.y, -camera.z);
+            LevelRenderer.renderLineBox(event.getPoseStack(), lines, box, r, g, b, 1.0F);
+            event.getPoseStack().popPose();
+        }
+
+        buffers.endBatch(RenderType.lines());
+        if (throughBlocks) RenderSystem.depthMask(true);
+    }
+
+    @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage()
                 != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
@@ -118,11 +164,8 @@ public final class WaypointRenderer {
                 continue;
             }
 
-            Vec3 anchor = new Vec3(
-                    waypoint.x(),
-                    waypoint.y(),
-                    waypoint.z()
-            );
+            Vec3 anchor = WaypointClientData.resolvePosition(waypoint);
+            if (anchor == null) continue;
             double distance = minecraft.player.position().distanceTo(anchor);
 
             float yaw = horizontalFacingYaw(anchor, camera);
