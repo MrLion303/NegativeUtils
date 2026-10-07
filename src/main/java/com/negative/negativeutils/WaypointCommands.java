@@ -62,19 +62,8 @@ public final class WaypointCommands {
                                     return Command.SINGLE_SUCCESS;
                                 })))
                         .then(Commands.literal("lista").executes(context -> {
-                            var waypoints = WaypointSavedData.get(context.getSource().getServer()).getWaypoints();
-                            if (waypoints.isEmpty()) {
-                                context.getSource().sendSuccess(() -> Component.literal("No hay waypoints."), false);
-                            }
-                            for (var waypoint : waypoints) {
-                                context.getSource().sendSuccess(() -> Component.literal(
-                                        waypoint.commandId() + " | " + waypoint.name() + " | "
-                                                + (waypoint.visible() ? "visible" : "oculto") + " | "
-                                                + waypoint.dimension() + " | "
-                                                + Math.round(waypoint.x()) + ", "
-                                                + Math.round(waypoint.y()) + ", "
-                                                + Math.round(waypoint.z())), false);
-                            }
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            WaypointNetwork.openList(player);
                             return Command.SINGLE_SUCCESS;
                         }))
                         .then(Commands.literal("clear").executes(context -> {
