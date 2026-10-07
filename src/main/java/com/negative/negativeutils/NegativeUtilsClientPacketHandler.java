@@ -36,9 +36,11 @@ final class NegativeUtilsClientPacketHandler {
     }
 
     static void openWaypointEditor(java.util.UUID id, String commandId, String name, String dimension,
-                                   double x, double y, double z, int color, String icon, String corner) {
+                                   double x, double y, double z, int color, String icon, String corner,
+                                   boolean trackerMode, String trackedPlayerName) {
         Minecraft.getInstance().setScreen(
-                new WaypointScreen(id, commandId, name, dimension, x, y, z, color, icon, corner)
+                new WaypointScreen(id, commandId, name, dimension, x, y, z, color, icon, corner,
+                        trackerMode, trackedPlayerName)
         );
     }
 
