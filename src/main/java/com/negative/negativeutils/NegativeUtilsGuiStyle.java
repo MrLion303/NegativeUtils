@@ -1,11 +1,21 @@
 package com.negative.negativeutils;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.network.chat.Component;
 
 public final class NegativeUtilsGuiStyle {
     private static final int ACCENT = 0xFF54D6FF;
+    private static final int FIELD_HEIGHT = 22;
 
     private NegativeUtilsGuiStyle() {
+    }
+
+    public static void styleField(EditBox field) {
+        field.setHeight(FIELD_HEIGHT);
+        field.setHint(Component.empty());
+        field.setTextColor(0xFFEAF7FF);
+        field.setTextColorUneditable(0xFF9FAAB8);
     }
 
     public static void renderFrame(
