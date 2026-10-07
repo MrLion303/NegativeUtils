@@ -17,6 +17,7 @@ public class CountdownServerEvents {
         if(++tickCounter<20)return;
         tickCounter=0;
         CountdownSavedData data=CountdownSavedData.get(event.getServer());
-        if(data.updateFinished()) CountdownNetwork.syncAll(data);
+        data.updateFinished();
+        CountdownNetwork.syncAll(data);
     }
 }
