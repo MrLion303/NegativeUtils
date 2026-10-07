@@ -32,6 +32,8 @@ import java.util.List;
 public final class WaypointRenderer {
     private static final float MARKER_SCALE = 0.11F;
     private static final float LABEL_SCALE = 0.027F;
+    private static final float NAME_SCALE = 0.039F;
+    private static final float DISTANCE_SCALE = 0.032F;
 
     private WaypointRenderer() {
     }
@@ -172,6 +174,8 @@ public final class WaypointRenderer {
             float distanceScale = (float) Math.max(0.001, distance / 8.0);
             float markerScale = MARKER_SCALE * distanceScale;
             float labelScale = LABEL_SCALE * distanceScale;
+            float nameScale = NAME_SCALE * distanceScale;
+            float distanceTextScale = DISTANCE_SCALE * distanceScale;
             int color = 0xFF000000 | waypoint.color();
 
             drawVerticalText(
@@ -199,7 +203,7 @@ public final class WaypointRenderer {
                         anchor.z,
                         yaw,
                         waypoint.name(),
-                        labelScale,
+                        nameScale,
                         0xFFFFFFFF,
                         Font.DisplayMode.NORMAL,
                         0x65000000
@@ -211,11 +215,11 @@ public final class WaypointRenderer {
                     buffers,
                     poseStack,
                     anchor.x,
-                    anchor.y - 0.48 * distanceScale,
+                    anchor.y - 0.78 * distanceScale,
                     anchor.z,
                     yaw,
                     Math.round(distance) + " m",
-                    labelScale,
+                    distanceTextScale,
                     0xFFFFFFFF,
                     Font.DisplayMode.NORMAL,
                     0x65000000
