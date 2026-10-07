@@ -141,7 +141,7 @@ public final class WaypointRenderer {
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage()
-                != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             return;
         }
 
@@ -205,7 +205,7 @@ public final class WaypointRenderer {
                         waypoint.name(),
                         nameScale,
                         0xFFFFFFFF,
-                        Font.DisplayMode.SEE_THROUGH,
+                        Font.DisplayMode.NORMAL,
                         0x65000000
                 );
             }
