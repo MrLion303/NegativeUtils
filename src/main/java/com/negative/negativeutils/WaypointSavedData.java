@@ -39,7 +39,8 @@ public class WaypointSavedData extends SavedData {
                     t.contains("Shape") ? t.getInt("Shape") : 1,
                     !t.contains("Visible") || t.getBoolean("Visible"),
                     t.contains("Icon") ? sanitizeIcon(t.getString("Icon")) : "◆",
-                    t.contains("Corner") ? sanitizeCorner(t.getString("Corner")) : "TOP_LEFT"));
+                    t.contains("Corner") ? sanitizeCorner(t.getString("Corner")) : "TOP_LEFT",
+                    t.hasUUID("TrackedPlayer") ? t.getUUID("TrackedPlayer") : null));
         }
         return data;
     }
@@ -56,6 +57,7 @@ public class WaypointSavedData extends SavedData {
             t.putInt("Color", w.color()); t.putInt("Shape", w.shape());
             t.putBoolean("Visible", w.visible()); t.putString("Icon", w.icon());
             t.putString("Corner", w.corner());
+            if (w.trackedPlayer() != null) t.putUUID("TrackedPlayer", w.trackedPlayer());
             list.add(t);
         }
         tag.put("Waypoints", list);
@@ -73,7 +75,24 @@ public class WaypointSavedData extends SavedData {
         if (getByCommandId(cleanId) != null) return null;
         Waypoint waypoint = new Waypoint(UUID.randomUUID(), owner, cleanId, cleanName,
                 dim.toString(), pos.x, pos.y, pos.z, color & 0xFFFFFF, 1, true,
-                sanitizeIcon(icon), sanitizeCorner(corner));
+                sanitizeIcon(icon), sanitizeCorner(corner), null);
+        waypoints.add(waypoint);
+        setDirty();
+        return waypoint;
+    }
+
+    public Waypoint addTracked(UUID owner, String commandId, String name, String dimension,
+                               Vec3 pos, int color, String icon, String corner, UUID target) {
+        ResourceLocation dim = ResourceLocation.tryParse(dimension);
+        if (owner == null || target == null || dim == null || pos == null) return null;
+        String cleanName = sanitizeName(name);
+        if (cleanName.isBlank()) cleanName = "Jugador_" + target.toString().substring(0, 8);
+        String cleanId = sanitizeCommandId(commandId);
+        if (cleanId.isBlank()) cleanId = nextAutomaticId();
+        if (getByCommandId(cleanId) != null) return null;
+        Waypoint waypoint = new Waypoint(UUID.randomUUID(), owner, cleanId, cleanName,
+                dim.toString(), pos.x, pos.y, pos.z, color & 0xFFFFFF, 1, true,
+                sanitizeIcon(icon), sanitizeCorner(corner), target);
         waypoints.add(waypoint);
         setDirty();
         return waypoint;
@@ -110,7 +129,7 @@ public class WaypointSavedData extends SavedData {
             if (cleanName.isBlank()) cleanName = w.name();
             waypoints.set(i, new Waypoint(w.id(), w.owner(), cleanId, cleanName, dim.toString(),
                     pos.x, pos.y, pos.z, color & 0xFFFFFF, w.shape(), w.visible(),
-                    sanitizeIcon(icon), sanitizeCorner(corner)));
+                    sanitizeIcon(icon), sanitizeCorner(corner), w.trackedPlayer()));
             setDirty();
             return true;
         }
@@ -123,7 +142,7 @@ public class WaypointSavedData extends SavedData {
         if (w.visible() == visible) return true;
         waypoints.set(waypoints.indexOf(w), new Waypoint(w.id(), w.owner(), w.commandId(),
                 w.name(), w.dimension(), w.x(), w.y(), w.z(), w.color(), w.shape(),
-                visible, w.icon(), w.corner()));
+                visible, w.icon(), w.corner(), w.trackedPlayer()));
         setDirty();
         return true;
     }
@@ -182,5 +201,7 @@ public class WaypointSavedData extends SavedData {
 
     public record Waypoint(UUID id, UUID owner, String commandId, String name, String dimension,
                           double x, double y, double z, int color, int shape, boolean visible,
-                          String icon, String corner) {}
+                          String icon, String corner, UUID trackedPlayer) {
+        public boolean tracksPlayer() { return trackedPlayer != null; }
+    }
 }
