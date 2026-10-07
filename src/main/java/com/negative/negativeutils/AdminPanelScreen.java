@@ -315,6 +315,9 @@ public class AdminPanelScreen extends Screen {
     }
 
     private void renderColorWheel(GuiGraphics graphics) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 1000);
+        graphics.fill(0, 0, width, height, 0xB0101318);
         int centerX = width / 2;
         int centerY = WHEEL_CENTER_Y;
         int panelLeft = centerX - WHEEL_RADIUS - 22;
@@ -355,6 +358,7 @@ public class AdminPanelScreen extends Screen {
         graphics.drawCenteredString(font, "Aplicar", centerX - 50, 200, 0xFFFFFFFF);
         graphics.fill(centerX + 4, 193, centerX + 96, 216, 0xFF6B3B3B);
         graphics.drawCenteredString(font, "Cancelar", centerX + 50, 200, 0xFFFFFFFF);
+        graphics.pose().popPose();
     }
 
     @Override
