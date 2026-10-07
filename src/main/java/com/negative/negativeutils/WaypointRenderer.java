@@ -221,7 +221,7 @@ public final class WaypointRenderer {
                     Math.round(distance) + " m",
                     distanceTextScale,
                     0xFFFFFFFF,
-                    Font.DisplayMode.NORMAL,
+                    Font.DisplayMode.SEE_THROUGH,
                     0x65000000
             );
         }
