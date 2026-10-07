@@ -43,6 +43,16 @@ public final class WaypointCommands {
                         .then(Commands.literal("editar").then(Commands.argument("id", StringArgumentType.word())
                                 .suggests((c, b) -> suggestIds(c, b))
                                 .executes(context -> openEdit(context))))
+                        .then(Commands.literal("rastrear")
+                                .then(Commands.argument("id", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> suggestIds(ctx, builder))
+                                        .then(Commands.argument("jugador", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        ctx.getSource().getServer().getPlayerList().getPlayers().stream()
+                                                                .map(ServerPlayer::getGameProfile)
+                                                                .map(profile -> profile.getName())
+                                                                .toList(), builder))
+                                                .executes(WaypointCommands::trackPlayer))))
                         .then(Commands.literal("mostrar").then(Commands.argument("id", StringArgumentType.word())
                                 .suggests((c, b) -> suggestIds(c, b))
                                 .executes(context -> setVisible(context, true))))
@@ -74,6 +84,31 @@ public final class WaypointCommands {
                                     "Se eliminaron " + count + " waypoints."), true);
                             return Command.SINGLE_SUCCESS;
                         }))));
+    }
+
+    private static int trackPlayer(CommandContext<CommandSourceStack> context) {
+        WaypointSavedData data = WaypointSavedData.get(context.getSource().getServer());
+        String id = StringArgumentType.getString(context, "id");
+        String playerName = StringArgumentType.getString(context, "jugador");
+        WaypointSavedData.Waypoint existing = data.getByCommandId(id);
+        ServerPlayer target = context.getSource().getServer().getPlayerList().getPlayerByName(playerName);
+        if (existing == null) {
+            context.getSource().sendFailure(Component.literal("No existe el waypoint: " + id));
+            return 0;
+        }
+        if (target == null) {
+            context.getSource().sendFailure(Component.literal("El jugador no está conectado: " + playerName));
+            return 0;
+        }
+        WaypointSavedData.Waypoint tracked = data.replaceTrackedTarget(existing.id(), target);
+        if (tracked == null) {
+            context.getSource().sendFailure(Component.literal("No se pudo convertir el waypoint en rastreador."));
+            return 0;
+        }
+        WaypointNetwork.syncAll(data.getWaypoints());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Waypoint '" + id + "' ahora rastrea a " + target.getGameProfile().getName() + "."), true);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static CompletableFuture<Suggestions> suggestIds(
