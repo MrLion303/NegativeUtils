@@ -98,6 +98,18 @@ public class WaypointSavedData extends SavedData {
         return waypoint;
     }
 
+    public Waypoint replaceTrackedTarget(UUID id, net.minecraft.server.level.ServerPlayer target) {
+        Waypoint w = getById(id);
+        if (w == null || target == null) return null;
+        Waypoint updated = new Waypoint(w.id(), w.owner(), w.commandId(), w.name(),
+                target.level().dimension().location().toString(),
+                target.getX(), target.getY(), target.getZ(), w.color(), w.shape(),
+                w.visible(), w.icon(), w.corner(), target.getUUID());
+        waypoints.set(waypoints.indexOf(w), updated);
+        setDirty();
+        return updated;
+    }
+
     public Waypoint getById(UUID id) {
         for (Waypoint waypoint : waypoints) if (waypoint.id().equals(id)) return waypoint;
         return null;
