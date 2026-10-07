@@ -156,6 +156,9 @@ public final class WaypointRenderer {
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
 
+        // Los elementos del waypoint deben dibujarse por encima del terreno.
+        // Asi la distancia no queda tapada aunque el punto este detras de bloques.
+        RenderSystem.disableDepthTest();
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
 
@@ -189,7 +192,7 @@ public final class WaypointRenderer {
                     waypoint.icon(),
                     markerScale,
                     color,
-                    Font.DisplayMode.NORMAL,
+                    Font.DisplayMode.SEE_THROUGH,
                     0x55000000
             );
 
@@ -205,7 +208,7 @@ public final class WaypointRenderer {
                         waypoint.name(),
                         nameScale,
                         0xFFFFFFFF,
-                        Font.DisplayMode.NORMAL,
+                        Font.DisplayMode.SEE_THROUGH,
                         0x65000000
                 );
             }
@@ -228,6 +231,7 @@ public final class WaypointRenderer {
 
         buffers.endBatch();
         poseStack.popPose();
+        RenderSystem.enableDepthTest();
     }
 
     private static float horizontalFacingYaw(
