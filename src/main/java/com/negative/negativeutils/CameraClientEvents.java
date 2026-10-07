@@ -34,7 +34,7 @@ public final class CameraClientEvents {
         }
 
         long window = mc.getWindow().getWindow();
-        rightHeld = InputConstants.isKeyDown(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+        rightHeld = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
 
         if (!camera.forceLook() && !rightHeld) return;
         Vec3 target = CameraClientData.resolveTarget(camera);
