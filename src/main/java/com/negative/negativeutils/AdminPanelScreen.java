@@ -47,44 +47,53 @@ public class AdminPanelScreen extends Screen {
 
     private void buildWidgets() {
         clearWidgets();
-        int left = width / 2 - 195;
-        int right = width / 2 + 15;
+
+        int panelWidth = Math.min(760, Math.max(560, width - 24));
+        int panelLeft = (width - panelWidth) / 2;
+        int dividerX = panelLeft + 190;
+        int editorLeft = dividerX + 18;
+        int fieldWidth = panelWidth - 190 - 36;
 
         addRenderableWidget(Button.builder(Component.literal("Nuevo contador"), button -> {
             selected = -1;
             clearEditor();
             buildWidgets();
-        }).bounds(left, 34, 150, 20).build());
+        }).bounds(panelLeft + 14, 58, 162, 20).build());
 
-        for (int i = 0; i < entries.size() && i < 5; i++) {
+        for (int i = 0; i < entries.size() && i < 7; i++) {
             CountdownClientData.Entry entry = entries.get(i);
             int index = i;
+            int y = 86 + i * 24;
             addRenderableWidget(Button.builder(
-                    Component.literal((entry.running() ? "● " : "○ ") + entry.name()),
+                    Component.literal((entry.running() ? "● " : "○ ") + trimToWidth(entry.name(), 145)),
                     button -> {
                         selected = index;
                         buildWidgets();
-                    }).bounds(left, 58 + i * 23, 150, 20).build());
+                    }).bounds(panelLeft + 14, y, 162, 20).build());
         }
 
-        nameInput = field(right, 26, 155, "Nombre del contador", 32);
-        int dateWidth = 43;
-        int dateGap = 4;
-        int dateStart = right + 1;
-        dayInput = numberField(dateStart, 52, dateWidth, 2);
-        monthInput = numberField(dateStart + dateWidth + dateGap, 52, dateWidth, 2);
-        yearInput = numberField(dateStart + (dateWidth + dateGap) * 2, 52, dateWidth + 7, 4);
-        hourInput = numberField(dateStart, 76, dateWidth, 2);
-        minuteInput = numberField(dateStart + dateWidth + dateGap, 76, dateWidth, 2);
-        secondInput = numberField(dateStart + (dateWidth + dateGap) * 2, 76, dateWidth + 7, 2);
+        nameInput = field(editorLeft, 54, fieldWidth, "", 32);
+        addRenderableWidget(nameInput);
 
-        displayTextInput = field(right, 100, 155, "Texto debajo del contador", 100);
-        colorInput = field(right, 124, 88, "Color HEX", 6);
+        int smallWidth = Math.max(36, (fieldWidth - 12) / 3);
+        int dateY = 98;
+        dayInput = numberField(editorLeft, dateY, smallWidth, 2);
+        monthInput = numberField(editorLeft + smallWidth + 6, dateY, smallWidth, 2);
+        yearInput = numberField(editorLeft + (smallWidth + 6) * 2, dateY,
+                fieldWidth - (smallWidth + 6) * 2, 4);
+
+        int timeY = 126;
+        hourInput = numberField(editorLeft, timeY, smallWidth, 2);
+        minuteInput = numberField(editorLeft + smallWidth + 6, timeY, smallWidth, 2);
+        secondInput = numberField(editorLeft + (smallWidth + 6) * 2, timeY,
+                fieldWidth - (smallWidth + 6) * 2, 2);
+
+        displayTextInput = field(editorLeft, 174, fieldWidth, "", 100);
+        int colorWidth = Math.min(86, Math.max(70, fieldWidth - 74));
+        colorInput = field(editorLeft, 206, colorWidth, "", 6);
         colorInput.setValue("FFFFFF");
         colorInput.setFilter(text -> text.length() <= 6
                 && text.chars().allMatch(character -> Character.digit(character, 16) >= 0));
-
-        addRenderableWidget(nameInput);
         addRenderableWidget(dayInput);
         addRenderableWidget(monthInput);
         addRenderableWidget(yearInput);
@@ -94,37 +103,58 @@ public class AdminPanelScreen extends Screen {
         addRenderableWidget(displayTextInput);
         addRenderableWidget(colorInput);
 
-        addRenderableWidget(Button.builder(Component.literal("Elegir color"), button -> openColorPicker())
-                .bounds(right + 92, 124, 63, 20).build());
-        addRenderableWidget(Button.builder(Component.literal(monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"), button -> {
-            long target = readTargetMillis();
-            monterreyTime = !monterreyTime;
-            setDateFields(target);
-            button.setMessage(Component.literal(monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"));
-        }).bounds(right, 170, 155, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Elegir color"),
+                button -> openColorPicker())
+                .bounds(editorLeft + colorWidth + 6, 206, fieldWidth - colorWidth - 6, 20)
+                .build());
 
-        addRenderableWidget(Button.builder(Component.literal(POSITION_LABELS[selectedPosition]), button -> {
-            selectedPosition = (selectedPosition + 1) % POSITIONS.length;
-            button.setMessage(Component.literal(POSITION_LABELS[selectedPosition]));
-        }).bounds(right, 147, 155, 20).build());
+        addRenderableWidget(Button.builder(
+                Component.literal(monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"),
+                button -> {
+                    long target = readTargetMillis();
+                    monterreyTime = !monterreyTime;
+                    setDateFields(target);
+                    button.setMessage(Component.literal(
+                            monterreyTime ? "Zona: Monterrey (UTC-6)" : "Zona: UTC"));
+                }).bounds(editorLeft, 238, fieldWidth, 20).build());
 
-        int actionY = height - 49;
-        addRenderableWidget(Button.builder(Component.literal("Guardar"), button -> saveCountdown())
-                .bounds(right, actionY, 74, 20).build());
+        addRenderableWidget(Button.builder(Component.literal(POSITION_LABELS[selectedPosition]),
+                button -> {
+                    selectedPosition = (selectedPosition + 1) % POSITIONS.length;
+                    button.setMessage(Component.literal(POSITION_LABELS[selectedPosition]));
+                }).bounds(editorLeft, 270, fieldWidth, 20).build());
+
+        int actionY = height - 52;
+        addRenderableWidget(Button.builder(Component.literal("Guardar"),
+                button -> saveCountdown())
+                .bounds(editorLeft, actionY, 86, 20).build());
         addRenderableWidget(Button.builder(Component.literal(
                 selected >= 0 && selected < entries.size() && entries.get(selected).running()
                         ? "Desactivar" : "Activar"), button -> toggleCountdown())
-                .bounds(right + 80, actionY, 75, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Eliminar"), button -> deleteCountdown())
-                .bounds(left, height - 25, 72, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Cerrar"), button -> onClose())
-                .bounds(width / 2 + 80, height - 25, 75, 20).build());
+                .bounds(editorLeft + 92, actionY, 86, 20).build());
+
+        addRenderableWidget(Button.builder(Component.literal("Eliminar"),
+                button -> deleteCountdown())
+                .bounds(panelLeft + 14, height - 52, 162, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Cerrar"),
+                button -> onClose())
+                .bounds(width / 2 - 45, height - 28, 90, 20).build());
 
         if (selected >= 0 && selected < entries.size()) {
             loadSelected();
         } else {
             clearEditor();
         }
+    }
+
+    private String trimToWidth(String text, int maxWidth) {
+        if (font.width(text) <= maxWidth) return text;
+        String suffix = "...";
+        int limit = Math.max(0, maxWidth - font.width(suffix));
+        while (!text.isEmpty() && font.width(text) > limit) {
+            text = text.substring(0, text.length() - 1);
+        }
+        return text + suffix;
     }
 
     private EditBox field(int x, int y, int w, String hint, int maxLength) {
@@ -365,22 +395,50 @@ public class AdminPanelScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         NegativeUtilsGuiStyle.renderFrame(graphics, width, height);
+
+        int panelWidth = Math.min(760, Math.max(560, width - 24));
+        int panelLeft = (width - panelWidth) / 2;
+        int panelRight = panelLeft + panelWidth;
+        int dividerX = panelLeft + 190;
+        int editorLeft = dividerX + 18;
+        int editorRight = panelRight - 18;
+
+        graphics.fill(panelLeft, 8, panelRight, height - 8, 0xE8141B24);
+        graphics.fill(panelLeft, 8, panelRight, 10, 0xFF54D6FF);
+
+        graphics.drawCenteredString(font, title, width / 2, 16, 0xFFFFFFFF);
+        if (!statusMessage.getString().isBlank()) {
+            graphics.drawCenteredString(font, statusMessage, width / 2, 28, statusColor);
+        }
+
+        graphics.drawString(font, "Contadores", panelLeft + 14, 46, 0xFFFFFFFF);
+        graphics.drawString(font, "Editor", editorLeft, 46, 0xFFFFFFFF);
+
+        graphics.fill(dividerX, 40, dividerX + 1, height - 24, 0x554C5968);
+
+        graphics.drawString(font, "Fecha", editorLeft, 72, 0xFFD8E1EA);
+        graphics.drawString(font,
+                monterreyTime ? "Monterrey (UTC-6)" : "UTC",
+                editorLeft + 78, 72, 0xFF9FAAB8);
+        graphics.drawString(font, "Día", editorLeft, 92, 0xFF9FAAB8);
+        graphics.drawString(font, "Mes", editorLeft + 49, 92, 0xFF9FAAB8);
+        graphics.drawString(font, "Año", editorLeft + 98, 92, 0xFF9FAAB8);
+
+        graphics.drawString(font, "Hora", editorLeft, 120, 0xFFD8E1EA);
+        graphics.drawString(font, "Hora", editorLeft, 140, 0xFF9FAAB8);
+        graphics.drawString(font, "Min", editorLeft + 49, 140, 0xFF9FAAB8);
+        graphics.drawString(font, "Seg", editorLeft + 98, 140, 0xFF9FAAB8);
+
+        graphics.drawString(font, "Texto debajo del contador", editorLeft, 168, 0xFFD8E1EA);
+        graphics.drawString(font, "Color", editorLeft, 200, 0xFFD8E1EA);
+        graphics.drawString(font, "Posición", editorLeft, 232, 0xFFD8E1EA);
+
         super.render(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(font, title, width / 2, 8, 0xFFFFFF);
-        graphics.drawCenteredString(font, statusMessage, width / 2, 20, statusColor);
 
-        int left = width / 2 - 195;
-        int right = width / 2 + 15;
-        graphics.drawString(font, "Contadores", left, 22, 0xFFFFFF);
-        graphics.drawString(font, "Editor", right, 21, 0xFFFFFF);
-        graphics.drawString(font, "Fecha " + (monterreyTime ? "Monterrey UTC-6" : "UTC") + ": día / mes / año", right, 43, 0xFFFFFF);
-        graphics.drawString(font, "Hora " + (monterreyTime ? "Monterrey UTC-6" : "UTC") + ": h / min / seg", right, 67, 0xFFFFFF);
-        graphics.drawString(font, "Texto debajo del contador", right, 91, 0xFFFFFF);
-        graphics.drawString(font, "Color", right, 115, 0xFFFFFF);
-
-        if (colorPickerOpen) renderColorWheel(graphics);
+        if (colorPickerOpen) {
+            renderColorWheel(graphics);
+        }
     }
-
     @Override
     public boolean isPauseScreen() {
         return false;
