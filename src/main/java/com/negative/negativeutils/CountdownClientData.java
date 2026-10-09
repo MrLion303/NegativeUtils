@@ -22,6 +22,7 @@ public final class CountdownClientData {
                         || !oldEntry.name().equals(newEntry.name())
                         || oldEntry.running() != newEntry.running()
                         || oldEntry.finished() != newEntry.finished()
+                        || oldEntry.displayed() != newEntry.displayed()
                         || oldEntry.displayColor() != newEntry.displayColor()
                         || !oldEntry.displayText().equals(newEntry.displayText())
                         || !oldEntry.displayPosition().equals(newEntry.displayPosition())) {
@@ -46,7 +47,8 @@ public final class CountdownClientData {
             long pausedRemainingMillis,
             String displayText,
             int displayColor,
-            String displayPosition
+            String displayPosition,
+            boolean displayed
     ) {
         List<Entry> updated = new ArrayList<>(countdowns);
         updated.removeIf(entry -> entry.id().equals(LEGACY_COUNTDOWN_ID));
@@ -60,7 +62,8 @@ public final class CountdownClientData {
                     pausedRemainingMillis,
                     displayText == null ? "" : displayText,
                     displayColor,
-                    displayPosition == null ? "ACTIONBAR" : displayPosition
+                    displayPosition == null ? "ACTIONBAR" : displayPosition,
+                    true
             ));
         }
         countdowns = List.copyOf(updated);
