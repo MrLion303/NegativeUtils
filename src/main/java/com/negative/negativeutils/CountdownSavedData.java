@@ -102,7 +102,6 @@ public class CountdownSavedData extends SavedData {
     public boolean updateFinished() {
         boolean changed = false;
         for (Countdown c : countdowns) {
-            c.displayed = !t.contains("Displayed") || t.getBoolean("Displayed");
             if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
                 c.running = false;
                 c.finished = true;
@@ -178,6 +177,7 @@ public class CountdownSavedData extends SavedData {
                     t.getLong("EndTime"), t.getLong("Remaining"),
                     t.getString("Text"), t.getInt("Color"),
                     t.getString("Position"));
+            c.displayed = !t.contains("Displayed") || t.getBoolean("Displayed");
             if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
                 c.running=false; c.finished=true; c.pausedRemainingMillis=0;
             }
