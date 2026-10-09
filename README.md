@@ -113,6 +113,25 @@ También están disponibles los alias `activar` y `desactivar`:
 
 La cuenta utiliza una **fecha y hora final absoluta**, por lo que el tiempo continúa transcurriendo aunque el servidor permanezca apagado. Al volver a encenderlo, el mod calcula el tiempo restante usando la hora actual.
 
+### Contadores rápidos: `contadorminus`
+
+Este sistema crea contadores independientes sin abrir una interfaz. Solo se muestran en la bossbar y sus IDs no llevan espacios.
+
+```text
+/negativeutils contadorminus crear <id> <minutos>
+/negativeutils contadorminus mostrar <id>
+/negativeutils contadorminus ocultar <id>
+/negativeutils contadorminus borrar <id>
+```
+
+Ejemplo: `/negativeutils contadorminus crear inicio 2` crea el contador `inicio` con una duración de 2 minutos, inicialmente oculto.
+
+- **Mostrar:** inicia o reinicia el contador desde la duración completa.
+- **Ocultar:** lo oculta y reinicia su duración completa.
+- **Al llegar a cero:** se oculta automáticamente y queda reiniciado para la siguiente activación.
+- Los contadores rápidos no abren el panel y no permiten configurar otra posición que no sea la bossbar.
+- El ID debe ser único entre los contadores existentes. El tiempo permitido es de 1 a 525600 minutos.
+
 ### Bloque de tiempo
 
 Permite retrasar una señal de redstone.
