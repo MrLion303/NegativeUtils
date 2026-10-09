@@ -102,6 +102,7 @@ public class CountdownSavedData extends SavedData {
     public boolean updateFinished() {
         boolean changed = false;
         for (Countdown c : countdowns) {
+            c.displayed = !t.contains("Displayed") || t.getBoolean("Displayed");
             if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
                 c.running = false;
                 c.finished = true;
@@ -119,10 +120,22 @@ public class CountdownSavedData extends SavedData {
         return "Contador " + n;
     }
 
-    private Countdown getByName(String name) {
+    public Countdown getByName(String name) {
         String clean = sanitizeName(name);
-        for (Countdown c : countdowns) if (c.name().equals(clean)) return c;
+        for (Countdown c : countdowns) {
+            if (c.name().equalsIgnoreCase(clean)) return c;
+        }
         return null;
+    }
+
+    public boolean setDisplayed(UUID id, boolean displayed) {
+        Countdown countdown = getById(id);
+        if (countdown == null) return false;
+        if (countdown.displayed != displayed) {
+            countdown.displayed = displayed;
+            setDirty();
+        }
+        return true;
     }
 
     public static String sanitizeName(String name) {
@@ -145,6 +158,7 @@ public class CountdownSavedData extends SavedData {
         private final UUID id;
         private String name, displayText, displayPosition;
         private boolean running, finished;
+        private boolean displayed = true;
         private long endTimeMillis, pausedRemainingMillis;
         private int displayColor;
 
@@ -173,7 +187,7 @@ public class CountdownSavedData extends SavedData {
         private CompoundTag save() {
             CompoundTag t=new CompoundTag();
             t.putUUID("Id",id); t.putString("Name",name); t.putBoolean("Running",running);
-            t.putBoolean("Finished",finished); t.putLong("EndTime",endTimeMillis);
+            t.putBoolean("Finished",finished); t.putBoolean("Displayed",displayed); t.putLong("EndTime",endTimeMillis);
             t.putLong("Remaining",getRemainingMillis()); t.putString("Text",displayText);
             t.putInt("Color",displayColor); t.putString("Position",displayPosition);
             return t;
@@ -196,5 +210,6 @@ public class CountdownSavedData extends SavedData {
         public boolean finished(){return finished;} public long endTimeMillis(){return endTimeMillis;}
         public long pausedRemainingMillis(){return pausedRemainingMillis;} public String displayText(){return displayText;}
         public int displayColor(){return displayColor;} public String displayPosition(){return displayPosition;}
+        public boolean displayed(){return displayed;}
     }
 }
