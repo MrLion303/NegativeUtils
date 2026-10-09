@@ -23,6 +23,8 @@ public final class CountdownClientData {
                         || oldEntry.running() != newEntry.running()
                         || oldEntry.finished() != newEntry.finished()
                         || oldEntry.displayed() != newEntry.displayed()
+                        || oldEntry.minuteMode() != newEntry.minuteMode()
+                        || oldEntry.durationMillis() != newEntry.durationMillis()
                         || oldEntry.displayColor() != newEntry.displayColor()
                         || !oldEntry.displayText().equals(newEntry.displayText())
                         || !oldEntry.displayPosition().equals(newEntry.displayPosition())) {
@@ -62,7 +64,9 @@ public final class CountdownClientData {
                     displayText == null ? "" : displayText,
                     displayColor,
                     displayPosition == null ? "ACTIONBAR" : displayPosition,
-                    true
+                    true,
+                    false,
+                    Math.max(0, pausedRemainingMillis)
             ));
         }
         countdowns = List.copyOf(updated);
@@ -82,7 +86,9 @@ public final class CountdownClientData {
             String displayText,
             int displayColor,
             String displayPosition,
-            boolean displayed
+            boolean displayed,
+            boolean minuteMode,
+            long durationMillis
     ) {
         public long remainingMillis() {
             if (finished) return 0;
