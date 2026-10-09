@@ -19,7 +19,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class CountdownNetwork {
-    private static final String PROTOCOL="2";
+    private static final String PROTOCOL="3";
     private static final SimpleChannel CHANNEL=NetworkRegistry.newSimpleChannel(
             ResourceLocation.fromNamespaceAndPath("negativeutils","countdown"),
             ()->PROTOCOL,PROTOCOL::equals,PROTOCOL::equals);
@@ -43,7 +43,7 @@ public final class CountdownNetwork {
     public static void syncAll(CountdownSavedData data){sync(data,PacketDistributor.ALL.noArg());}
     private static void sync(CountdownSavedData d,PacketDistributor.PacketTarget target){
         List<SyncEntry> list=new ArrayList<>();
-        for(var c:d.getCountdowns()) list.add(new SyncEntry(c.id(),c.name(),c.running(),c.finished(),c.endTimeMillis(),c.pausedRemainingMillis(),c.displayText(),c.displayColor(),c.displayPosition()));
+        for(var c:d.getCountdowns()) list.add(new SyncEntry(c.id(),c.name(),c.running(),c.finished(),c.endTimeMillis(),c.pausedRemainingMillis(),c.displayText(),c.displayColor(),c.displayPosition(),c.displayed()));
         CHANNEL.send(target,new SyncPacket(list));
     }
     private static class SavePacket {
@@ -63,12 +63,12 @@ public final class CountdownNetwork {
         static void encode(DeletePacket p,FriendlyByteBuf b){b.writeUUID(p.uuid);} static DeletePacket decode(FriendlyByteBuf b){return new DeletePacket(b.readUUID());}
         static void handle(DeletePacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->{ServerPlayer pl=c.getSender();if(pl==null||!pl.hasPermissions(2))return;var d=CountdownSavedData.get(pl.getServer());d.remove(p.uuid);sync(d,PacketDistributor.ALL.noArg());});c.setPacketHandled(true);}
     }
-    private record SyncEntry(UUID id,String name,boolean running,boolean finished,long end,long remaining,String text,int color,String position){}
+    private record SyncEntry(UUID id,String name,boolean running,boolean finished,long end,long remaining,String text,int color,String position,boolean displayed){}
     private static class SyncPacket {
         final List<SyncEntry> list; SyncPacket(List<SyncEntry> l){list=List.copyOf(l);}
-        static void encode(SyncPacket p,FriendlyByteBuf b){b.writeVarInt(p.list.size());for(var x:p.list){b.writeUUID(x.id());b.writeUtf(x.name(),32);b.writeBoolean(x.running());b.writeBoolean(x.finished());b.writeLong(x.end());b.writeLong(x.remaining());b.writeUtf(x.text(),100);b.writeInt(x.color());b.writeUtf(x.position(),16);}}
-        static SyncPacket decode(FriendlyByteBuf b){int n=b.readVarInt();if(n<0||n>512)throw new IllegalArgumentException("Cantidad inválida");List<SyncEntry> l=new ArrayList<>();for(int i=0;i<n;i++)l.add(new SyncEntry(b.readUUID(),b.readUtf(32),b.readBoolean(),b.readBoolean(),b.readLong(),b.readLong(),b.readUtf(100),b.readInt(),b.readUtf(16)));return new SyncPacket(l);}
-        static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->{List<CountdownClientData.Entry> l=new ArrayList<>();for(var x:p.list)l.add(new CountdownClientData.Entry(x.id(),x.name(),x.running(),x.finished(),x.end(),x.remaining(),x.text(),x.color(),x.position()));if (CountdownClientData.set(l)) NegativeUtilsClientPacketHandler.refreshAdminPanel();}));c.setPacketHandled(true);}
+        static void encode(SyncPacket p,FriendlyByteBuf b){b.writeVarInt(p.list.size());for(var x:p.list){b.writeUUID(x.id());b.writeUtf(x.name(),32);b.writeBoolean(x.running());b.writeBoolean(x.finished());b.writeLong(x.end());b.writeLong(x.remaining());b.writeUtf(x.text(),100);b.writeInt(x.color());b.writeUtf(x.position(),16);b.writeBoolean(x.displayed());}}
+        static SyncPacket decode(FriendlyByteBuf b){int n=b.readVarInt();if(n<0||n>512)throw new IllegalArgumentException("Cantidad inválida");List<SyncEntry> l=new ArrayList<>();for(int i=0;i<n;i++)l.add(new SyncEntry(b.readUUID(),b.readUtf(32),b.readBoolean(),b.readBoolean(),b.readLong(),b.readLong(),b.readUtf(100),b.readInt(),b.readUtf(16),b.readBoolean()));return new SyncPacket(l);}
+        static void handle(SyncPacket p,Supplier<NetworkEvent.Context> s){var c=s.get();c.enqueueWork(()->DistExecutor.unsafeRunWhenOn(Dist.CLIENT,()->()->{List<CountdownClientData.Entry> l=new ArrayList<>();for(var x:p.list)l.add(new CountdownClientData.Entry(x.id(),x.name(),x.running(),x.finished(),x.end(),x.remaining(),x.text(),x.color(),x.position(),x.displayed()));if (CountdownClientData.set(l)) NegativeUtilsClientPacketHandler.refreshAdminPanel();}));c.setPacketHandled(true);}
     }
     private static class OpenPacket {
         static void encode(OpenPacket p,FriendlyByteBuf b){} static OpenPacket decode(FriendlyByteBuf b){return new OpenPacket();}
