@@ -69,6 +69,45 @@ public class CountdownSavedData extends SavedData {
         return countdown;
     }
 
+    public Countdown createMinuteCountdown(String id, int minutes) {
+        String clean = sanitizeName(id);
+        if (clean.isBlank() || getByName(clean) != null || minutes < 1) return null;
+        long duration = minutes * 60_000L;
+        Countdown countdown = new Countdown(UUID.randomUUID(), clean, false, false,
+                0L, duration, "", 0xFFFFFF, "BOSSBAR");
+        countdown.minuteMode = true;
+        countdown.durationMillis = duration;
+        countdown.displayed = false;
+        countdowns.add(countdown);
+        setDirty();
+        return countdown;
+    }
+
+    public boolean setMinuteCountdownDisplayed(UUID id, boolean displayed) {
+        Countdown countdown = getById(id);
+        if (countdown == null || !countdown.minuteMode) return false;
+        if (displayed) {
+            countdown.finished = false;
+            countdown.pausedRemainingMillis = countdown.durationMillis;
+            countdown.endTimeMillis = System.currentTimeMillis() + countdown.durationMillis;
+            countdown.running = true;
+            countdown.displayed = true;
+        } else {
+            countdown.running = false;
+            countdown.finished = false;
+            countdown.pausedRemainingMillis = countdown.durationMillis;
+            countdown.endTimeMillis = 0L;
+            countdown.displayed = false;
+        }
+        setDirty();
+        return true;
+    }
+
+    public boolean removeByName(String name) {
+        Countdown countdown = getByName(name);
+        return countdown != null && remove(countdown.id());
+    }
+
     public boolean update(UUID id, String name, long durationMillis, String text, int color, String position) {
         Countdown c = getById(id);
         if (c == null) return false;
@@ -104,8 +143,15 @@ public class CountdownSavedData extends SavedData {
         for (Countdown c : countdowns) {
             if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
                 c.running = false;
-                c.finished = true;
-                c.pausedRemainingMillis = 0;
+                if (c.minuteMode) {
+                    c.finished = false;
+                    c.pausedRemainingMillis = c.durationMillis;
+                    c.endTimeMillis = 0L;
+                    c.displayed = false;
+                } else {
+                    c.finished = true;
+                    c.pausedRemainingMillis = 0;
+                }
                 changed = true;
             }
         }
@@ -158,6 +204,8 @@ public class CountdownSavedData extends SavedData {
         private String name, displayText, displayPosition;
         private boolean running, finished;
         private boolean displayed = true;
+        private boolean minuteMode;
+        private long durationMillis;
         private long endTimeMillis, pausedRemainingMillis;
         private int displayColor;
 
@@ -166,6 +214,7 @@ public class CountdownSavedData extends SavedData {
                          int color, String position) {
             this.id=id; this.name=sanitizeName(name); this.running=running; this.finished=finished;
             this.endTimeMillis=endTimeMillis; this.pausedRemainingMillis=Math.max(0, pausedRemainingMillis);
+            this.durationMillis=Math.max(0, pausedRemainingMillis);
             this.displayText=sanitizeText(text); this.displayColor=color & 0xFFFFFF;
             this.displayPosition=validPosition(position) ? position : "BOSSBAR";
         }
@@ -178,8 +227,19 @@ public class CountdownSavedData extends SavedData {
                     t.getString("Text"), t.getInt("Color"),
                     t.getString("Position"));
             c.displayed = !t.contains("Displayed") || t.getBoolean("Displayed");
+            c.minuteMode = t.getBoolean("MinuteMode");
+            c.durationMillis = t.contains("Duration") ? Math.max(0, t.getLong("Duration")) : c.pausedRemainingMillis;
             if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
-                c.running=false; c.finished=true; c.pausedRemainingMillis=0;
+                c.running = false;
+                if (c.minuteMode) {
+                    c.finished = false;
+                    c.pausedRemainingMillis = c.durationMillis;
+                    c.endTimeMillis = 0L;
+                    c.displayed = false;
+                } else {
+                    c.finished = true;
+                    c.pausedRemainingMillis = 0;
+                }
             }
             return c;
         }
@@ -187,8 +247,9 @@ public class CountdownSavedData extends SavedData {
         private CompoundTag save() {
             CompoundTag t=new CompoundTag();
             t.putUUID("Id",id); t.putString("Name",name); t.putBoolean("Running",running);
-            t.putBoolean("Finished",finished); t.putBoolean("Displayed",displayed); t.putLong("EndTime",endTimeMillis);
-            t.putLong("Remaining",getRemainingMillis()); t.putString("Text",displayText);
+            t.putBoolean("Finished",finished); t.putBoolean("Displayed",displayed);
+            t.putBoolean("MinuteMode", minuteMode); t.putLong("Duration", durationMillis);
+            t.putLong("EndTime",endTimeMillis); t.putLong("Remaining",getRemainingMillis()); t.putString("Text",displayText);
             t.putInt("Color",displayColor); t.putString("Position",displayPosition);
             return t;
         }
@@ -210,6 +271,7 @@ public class CountdownSavedData extends SavedData {
         public boolean finished(){return finished;} public long endTimeMillis(){return endTimeMillis;}
         public long pausedRemainingMillis(){return pausedRemainingMillis;} public String displayText(){return displayText;}
         public int displayColor(){return displayColor;} public String displayPosition(){return displayPosition;}
-        public boolean displayed(){return displayed;}
+        public boolean displayed(){return displayed;} public boolean minuteMode(){return minuteMode;}
+        public long durationMillis(){return durationMillis;}
     }
 }
