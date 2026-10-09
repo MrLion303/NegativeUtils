@@ -20,6 +20,7 @@ public class CountdownHud {
         int w=event.getWindow().getGuiScaledWidth(), h=event.getWindow().getGuiScaledHeight();
         int[] offsets={0,0,0,0};
         for (CountdownClientData.Entry c: CountdownClientData.getAll()) {
+            if (!c.displayed()) continue;
             long ms=c.remainingMillis();
             if (ms<=0) continue;
             long s=(ms+999)/1000, d=s/86400, hr=(s%86400)/3600, min=(s%3600)/60, sec=s%60;
