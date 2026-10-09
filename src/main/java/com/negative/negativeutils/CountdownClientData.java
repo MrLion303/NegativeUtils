@@ -47,8 +47,7 @@ public final class CountdownClientData {
             long pausedRemainingMillis,
             String displayText,
             int displayColor,
-            String displayPosition,
-            boolean displayed
+            String displayPosition
     ) {
         List<Entry> updated = new ArrayList<>(countdowns);
         updated.removeIf(entry -> entry.id().equals(LEGACY_COUNTDOWN_ID));
@@ -82,7 +81,8 @@ public final class CountdownClientData {
             long pausedRemainingMillis,
             String displayText,
             int displayColor,
-            String displayPosition
+            String displayPosition,
+            boolean displayed
     ) {
         public long remainingMillis() {
             if (finished) return 0;
