@@ -93,6 +93,24 @@ La cuenta puede mostrarse como:
 - Scoreboard.
 - Title.
 
+Puedes controlar por comando si una cuenta regresiva aparece en pantalla sin pausarla ni reiniciar su tiempo. Usa el nombre con comillas si contiene espacios:
+
+```text
+/negativeutils contador mostrar "Nombre del contador"
+/negativeutils contador ocultar "Nombre del contador"
+```
+
+También están disponibles los alias `activar` y `desactivar`:
+
+```text
+/negativeutils contador activar "Nombre del contador"
+/negativeutils contador desactivar "Nombre del contador"
+```
+
+- **Mostrar / activar:** vuelve a mostrar esa cuenta regresiva a los jugadores.
+- **Ocultar / desactivar:** deja de mostrarla, pero el tiempo sigue avanzando normalmente.
+- Estos comandos requieren permisos de operador y no eliminan ni modifican la configuración del contador.
+
 La cuenta utiliza una **fecha y hora final absoluta**, por lo que el tiempo continúa transcurriendo aunque el servidor permanezca apagado. Al volver a encenderlo, el mod calcula el tiempo restante usando la hora actual.
 
 ### Bloque de tiempo
