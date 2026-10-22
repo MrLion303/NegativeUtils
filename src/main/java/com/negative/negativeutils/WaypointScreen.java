@@ -80,7 +80,7 @@ public class WaypointScreen extends Screen {
     protected void init() {
         int panelWidth = Math.min(360, Math.max(280, width - 20));
         int contentWidth = panelWidth - 32;
-        panelTop = Math.max(8, (height - (trackerMode ? 328 : 300)) / 2);
+        panelTop = Math.max(8, (height - (trackerMode ? 340 : 306)) / 2);
         int left = (width - panelWidth) / 2;
         int fieldLeft = left + 16;
         int fieldWidth = contentWidth;
@@ -377,7 +377,7 @@ public class WaypointScreen extends Screen {
         NegativeUtilsGuiStyle.renderFrame(graphics, width, height);
 
         int panelWidth = Math.min(360, Math.max(280, width - 20));
-        int panelHeight = trackerMode ? 328 : 300;
+        int panelHeight = trackerMode ? 340 : 306;
         int left = (width - panelWidth) / 2;
 
         graphics.fill(left, panelTop, left + panelWidth, panelTop + panelHeight, 0xE8141B24);
@@ -386,9 +386,9 @@ public class WaypointScreen extends Screen {
 
         int labelLeft = left + 16;
         graphics.drawString(font, "ID de comandos", labelLeft, panelTop + 23, 0xFFD8E1EA);
-        graphics.drawString(font, "Nombre visible", labelLeft, panelTop + 57, 0xFFD8E1EA);
+        graphics.drawString(font, "Nombre visible", labelLeft, panelTop + 71, 0xFFD8E1EA);
 
-        int labelY = panelTop + 91;
+        int labelY = panelTop + 117;
         if (trackerMode) {
             graphics.drawString(font, "Jugador a rastrear", labelLeft, labelY, 0xFF54D6FF);
             labelY += 34;
