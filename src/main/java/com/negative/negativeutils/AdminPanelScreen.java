@@ -73,24 +73,25 @@ public class AdminPanelScreen extends Screen {
         }
 
         nameInput = field(editorLeft, 56, fieldWidth, "", 32);
+        nameInput.setHint(Component.literal("Nombre del contador"));
         addRenderableWidget(nameInput);
 
         int smallWidth = Math.max(36, (fieldWidth - 12) / 3);
-        int dateY = 106;
+        int dateY = 110;
         dayInput = numberField(editorLeft, dateY, smallWidth, 2);
         monthInput = numberField(editorLeft + smallWidth + 6, dateY, smallWidth, 2);
         yearInput = numberField(editorLeft + (smallWidth + 6) * 2, dateY,
                 fieldWidth - (smallWidth + 6) * 2, 4);
 
-        int timeY = 154;
+        int timeY = 158;
         hourInput = numberField(editorLeft, timeY, smallWidth, 2);
         minuteInput = numberField(editorLeft + smallWidth + 6, timeY, smallWidth, 2);
         secondInput = numberField(editorLeft + (smallWidth + 6) * 2, timeY,
                 fieldWidth - (smallWidth + 6) * 2, 2);
 
-        displayTextInput = field(editorLeft, 192, fieldWidth, "", 100);
+        displayTextInput = field(editorLeft, 196, fieldWidth, "", 100);
         int colorWidth = Math.min(86, Math.max(70, fieldWidth - 74));
-        colorInput = field(editorLeft, 224, colorWidth, "", 6);
+        colorInput = field(editorLeft, 228, colorWidth, "", 6);
         colorInput.setValue("FFFFFF");
         colorInput.setFilter(text -> text.length() <= 6
                 && text.chars().allMatch(character -> Character.digit(character, 16) >= 0));
@@ -105,7 +106,7 @@ public class AdminPanelScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.literal("Elegir color"),
                 button -> openColorPicker())
-                .bounds(editorLeft + colorWidth + 6, 224, fieldWidth - colorWidth - 6, 20)
+                .bounds(editorLeft + colorWidth + 6, 228, fieldWidth - colorWidth - 6, 20)
                 .build());
 
         addRenderableWidget(Button.builder(
@@ -402,6 +403,8 @@ public class AdminPanelScreen extends Screen {
         int dividerX = panelLeft + 190;
         int editorLeft = dividerX + 18;
         int editorRight = panelRight - 18;
+        int fieldWidth = panelWidth - 190 - 36;
+        int smallWidth = Math.max(36, (fieldWidth - 12) / 3);
 
         graphics.fill(panelLeft, 8, panelRight, height - 8, 0xE8141B24);
         graphics.fill(panelLeft, 8, panelRight, 10, 0xFF54D6FF);
@@ -416,23 +419,23 @@ public class AdminPanelScreen extends Screen {
 
         graphics.fill(dividerX, 40, dividerX + 1, height - 24, 0x554C5968);
 
-        graphics.drawString(font, "Nombre", editorLeft, 42, 0xFFD8E1EA);
+        
         graphics.drawString(font, "Fecha", editorLeft, 84, 0xFFD8E1EA);
         graphics.drawString(font,
                 monterreyTime ? "Monterrey (UTC-6)" : "UTC",
                 editorLeft + 78, 84, 0xFF9FAAB8);
         graphics.drawString(font, "Día", editorLeft, 98, 0xFF9FAAB8);
-        graphics.drawString(font, "Mes", editorLeft + 49, 98, 0xFF9FAAB8);
-        graphics.drawString(font, "Año", editorLeft + 98, 98, 0xFF9FAAB8);
+        graphics.drawString(font, "Mes", editorLeft + smallWidth + 6, 98, 0xFF9FAAB8);
+        graphics.drawString(font, "Año", editorLeft + (smallWidth + 6) * 2, 98, 0xFF9FAAB8);
 
         graphics.drawString(font, "Hora", editorLeft, 132, 0xFFD8E1EA);
         graphics.drawString(font, "H", editorLeft, 146, 0xFF9FAAB8);
-        graphics.drawString(font, "Min", editorLeft + 49, 146, 0xFF9FAAB8);
-        graphics.drawString(font, "Seg", editorLeft + 98, 146, 0xFF9FAAB8);
+        graphics.drawString(font, "Min", editorLeft + smallWidth + 6, 146, 0xFF9FAAB8);
+        graphics.drawString(font, "Seg", editorLeft + (smallWidth + 6) * 2, 146, 0xFF9FAAB8);
 
         graphics.drawString(font, "Texto debajo del contador", editorLeft, 184, 0xFFD8E1EA);
         graphics.drawString(font, "Color", editorLeft, 216, 0xFFD8E1EA);
-        graphics.drawString(font, "Posición", editorLeft, 248, 0xFFD8E1EA);
+        graphics.drawString(font, "Posición", editorLeft, 276, 0xFFD8E1EA);
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
