@@ -46,14 +46,12 @@ public final class DiscordEmoteClientData {
         Files.createDirectories(textureDirectory);
 
         Path fontPath = fontDirectory.resolve("discord_emotes.json");
-        if (!Files.exists(fontPath)) {
-            try (var fontDefinition = DiscordEmoteClientData.class.getResourceAsStream(
-                    "/assets/negativeutils/font/discord_emotes.json")) {
-                if (fontDefinition == null) {
-                    throw new IOException("Bundled Discord emote font definition is missing.");
-                }
-                Files.write(fontPath, fontDefinition.readAllBytes());
+        try (var fontDefinition = DiscordEmoteClientData.class.getResourceAsStream(
+                "/assets/negativeutils/font/discord_emotes.json")) {
+            if (fontDefinition == null) {
+                throw new IOException("Bundled Discord emote font definition is missing.");
             }
+            Files.write(fontPath, fontDefinition.readAllBytes());
         }
 
         Path atlasPath = textureDirectory.resolve("discord_emotes.png");

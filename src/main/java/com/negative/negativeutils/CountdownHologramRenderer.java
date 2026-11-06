@@ -49,6 +49,7 @@ public final class CountdownHologramRenderer {
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
 

@@ -120,13 +120,11 @@ Comandos:
 ```text
 /negativeutils contador pocisionar "Nombre del contador" <x> <y> <z>
 /negativeutils contador pocisionar "Nombre del contador" <x> <y> <z> "hola.png"
-/negativeutils contador pocisionar "Nombre del contador" <x> <y> <z> "hola.png"
 /negativeutils contador desposicionar "Nombre del contador"
 ```
 
 - El comando se utiliza como `pocisionar`; escribe el nombre del contador entre comillas para admitir espacios.
 - Puedes utilizar coordenadas absolutas o relativas con `~`.
-- El nombre del contador debe escribirse entre comillas cuando contiene espacios.
 - Si omites el nombre de imagen, se conserva la imagen que ya tenga asignada el holograma.
 - `desposicionar` retira el holograma, pero no elimina ni modifica la cuenta regresiva.
 
