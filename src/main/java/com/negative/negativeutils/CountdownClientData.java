@@ -25,6 +25,10 @@ public final class CountdownClientData {
                         || oldEntry.displayed() != newEntry.displayed()
                         || oldEntry.minuteMode() != newEntry.minuteMode()
                         || oldEntry.durationMillis() != newEntry.durationMillis()
+                        || !oldEntry.hologramDimension().equals(newEntry.hologramDimension())
+                        || Double.compare(oldEntry.hologramX(), newEntry.hologramX()) != 0
+                        || Double.compare(oldEntry.hologramY(), newEntry.hologramY()) != 0
+                        || Double.compare(oldEntry.hologramZ(), newEntry.hologramZ()) != 0
                         || oldEntry.displayColor() != newEntry.displayColor()
                         || !oldEntry.displayText().equals(newEntry.displayText())
                         || !oldEntry.displayPosition().equals(newEntry.displayPosition())) {
@@ -66,7 +70,9 @@ public final class CountdownClientData {
                     displayPosition == null ? "ACTIONBAR" : displayPosition,
                     true,
                     false,
-                    Math.max(0, pausedRemainingMillis)
+                    Math.max(0, pausedRemainingMillis),
+                    "",
+                    0.0, 0.0, 0.0
             ));
         }
         countdowns = List.copyOf(updated);
@@ -88,8 +94,16 @@ public final class CountdownClientData {
             String displayPosition,
             boolean displayed,
             boolean minuteMode,
-            long durationMillis
+            long durationMillis,
+            String hologramDimension,
+            double hologramX,
+            double hologramY,
+            double hologramZ
     ) {
+        public boolean hasHologram() {
+            return hologramDimension != null && !hologramDimension.isBlank();
+        }
+
         public long remainingMillis() {
             if (finished) return 0;
             return running

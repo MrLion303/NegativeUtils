@@ -113,6 +113,17 @@ También están disponibles los alias `activar` y `desactivar`:
 
 La cuenta utiliza una **fecha y hora final absoluta**, por lo que el tiempo continúa transcurriendo aunque el servidor permanezca apagado. Al volver a encenderlo, el mod calcula el tiempo restante usando la hora actual.
 
+También puedes colocar una cuenta regresiva dentro del mundo como un **holograma 3D gigante**, visible para los jugadores que estén en la misma dimensión. El valor se actualiza en tiempo real y la posición se conserva al reiniciar el servidor.
+
+Comandos:
+
+```text
+/negativeutils contador posicionar "Nombre del contador" <x> <y> <z>
+/negativeutils contador desposicionar "Nombre del contador"
+```
+
+El comando acepta coordenadas relativas con `~`. También reconoce `pocisionar` como alias por compatibilidad. El holograma muestra el nombre, el tiempo restante y el texto personalizado del contador. Los comandos existentes `mostrar` y `ocultar` controlan también su visibilidad.
+
 ### Contadores rápidos: `contadorminus`
 
 Este sistema crea contadores independientes sin abrir una interfaz. Solo se muestran en la bossbar y sus IDs no llevan espacios.

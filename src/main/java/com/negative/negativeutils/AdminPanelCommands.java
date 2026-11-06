@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -49,6 +50,17 @@ public final class AdminPanelCommands {
                                         .then(Commands.literal("desactivar")
                                                 .then(Commands.argument("nombre", StringArgumentType.string())
                                                         .executes(context -> setDisplayed(context, false))))
+                                        .then(Commands.literal("posicionar")
+                                                .then(Commands.argument("nombre", StringArgumentType.string())
+                                                        .then(Commands.argument("posicion", Vec3Argument.vec3())
+                                                                .executes(AdminPanelCommands::setHologramPosition))))
+                                        .then(Commands.literal("pocisionar")
+                                                .then(Commands.argument("nombre", StringArgumentType.string())
+                                                        .then(Commands.argument("posicion", Vec3Argument.vec3())
+                                                                .executes(AdminPanelCommands::setHologramPosition))))
+                                        .then(Commands.literal("desposicionar")
+                                                .then(Commands.argument("nombre", StringArgumentType.string())
+                                                        .executes(AdminPanelCommands::clearHologramPosition)))
                         )
                         .then(Commands.literal("contadorminus")
                                 .then(Commands.literal("crear")
@@ -120,6 +132,57 @@ public final class AdminPanelCommands {
         data.remove(countdown.id());
         CountdownNetwork.syncAll(data);
         context.getSource().sendSuccess(() -> Component.literal("Contador \"" + id + "\" eliminado."), false);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int setHologramPosition(CommandContext<CommandSourceStack> context) {
+        String name = StringArgumentType.getString(context, "nombre");
+        var data = CountdownSavedData.get(context.getSource().getServer());
+        CountdownSavedData.Countdown countdown = data.getByName(name);
+        if (countdown == null) {
+            context.getSource().sendFailure(
+                    Component.literal("No existe una cuenta regresiva llamada \"" + name + "\".")
+            );
+            return 0;
+        }
+
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        var position = Vec3Argument.getVec3(context, "posicion");
+        String dimension = player.level().dimension().location().toString();
+        if (!data.setHologramPosition(countdown.id(), dimension, position)) {
+            context.getSource().sendFailure(Component.literal("No se pudo posicionar el holograma."));
+            return 0;
+        }
+
+        CountdownNetwork.syncAll(data);
+        context.getSource().sendSuccess(
+                () -> Component.literal("Holograma del contador \"" + countdown.name()
+                        + "\" colocado en " + String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f",
+                        position.x, position.y, position.z) + "."),
+                false
+        );
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int clearHologramPosition(CommandContext<CommandSourceStack> context) {
+        String name = StringArgumentType.getString(context, "nombre");
+        var data = CountdownSavedData.get(context.getSource().getServer());
+        CountdownSavedData.Countdown countdown = data.getByName(name);
+        if (countdown == null) {
+            context.getSource().sendFailure(
+                    Component.literal("No existe una cuenta regresiva llamada \"" + name + "\".")
+            );
+            return 0;
+        }
+        if (!data.clearHologramPosition(countdown.id())) {
+            context.getSource().sendFailure(Component.literal("No se pudo retirar el holograma."));
+            return 0;
+        }
+        CountdownNetwork.syncAll(data);
+        context.getSource().sendSuccess(
+                () -> Component.literal("Holograma del contador \"" + countdown.name() + "\" retirado."),
+                false
+        );
         return Command.SINGLE_SUCCESS;
     }
 

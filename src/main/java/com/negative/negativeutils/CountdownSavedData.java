@@ -8,6 +8,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.saveddata.SavedData;
 
 public class CountdownSavedData extends SavedData {
@@ -99,6 +101,29 @@ public class CountdownSavedData extends SavedData {
             countdown.endTimeMillis = 0L;
             countdown.displayed = false;
         }
+        setDirty();
+        return true;
+    }
+
+    public boolean setHologramPosition(UUID id, String dimension, Vec3 position) {
+        Countdown countdown = getById(id);
+        ResourceLocation parsedDimension = ResourceLocation.tryParse(dimension);
+        if (countdown == null || parsedDimension == null || position == null) return false;
+        countdown.hologramDimension = parsedDimension.toString();
+        countdown.hologramX = position.x;
+        countdown.hologramY = position.y;
+        countdown.hologramZ = position.z;
+        setDirty();
+        return true;
+    }
+
+    public boolean clearHologramPosition(UUID id) {
+        Countdown countdown = getById(id);
+        if (countdown == null) return false;
+        countdown.hologramDimension = "";
+        countdown.hologramX = 0.0;
+        countdown.hologramY = 0.0;
+        countdown.hologramZ = 0.0;
         setDirty();
         return true;
     }
@@ -204,6 +229,8 @@ public class CountdownSavedData extends SavedData {
         private String name, displayText, displayPosition;
         private boolean running, finished;
         private boolean displayed = true;
+        private String hologramDimension = "";
+        private double hologramX, hologramY, hologramZ;
         private boolean minuteMode;
         private long durationMillis;
         private long endTimeMillis, pausedRemainingMillis;
@@ -227,6 +254,13 @@ public class CountdownSavedData extends SavedData {
                     t.getString("Text"), t.getInt("Color"),
                     t.getString("Position"));
             c.displayed = !t.contains("Displayed") || t.getBoolean("Displayed");
+            ResourceLocation hologramDimension = ResourceLocation.tryParse(t.getString("HologramDimension"));
+            if (hologramDimension != null) {
+                c.hologramDimension = hologramDimension.toString();
+                c.hologramX = t.getDouble("HologramX");
+                c.hologramY = t.getDouble("HologramY");
+                c.hologramZ = t.getDouble("HologramZ");
+            }
             c.minuteMode = t.getBoolean("MinuteMode");
             c.durationMillis = t.contains("Duration") ? Math.max(0, t.getLong("Duration")) : c.pausedRemainingMillis;
             if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
@@ -250,6 +284,8 @@ public class CountdownSavedData extends SavedData {
             t.putBoolean("Finished",finished); t.putBoolean("Displayed",displayed);
             t.putBoolean("MinuteMode", minuteMode); t.putLong("Duration", durationMillis);
             t.putLong("EndTime",endTimeMillis); t.putLong("Remaining",getRemainingMillis()); t.putString("Text",displayText);
+            t.putString("HologramDimension", hologramDimension);
+            t.putDouble("HologramX", hologramX); t.putDouble("HologramY", hologramY); t.putDouble("HologramZ", hologramZ);
             t.putInt("Color",displayColor); t.putString("Position",displayPosition);
             return t;
         }
@@ -273,5 +309,10 @@ public class CountdownSavedData extends SavedData {
         public int displayColor(){return displayColor;} public String displayPosition(){return displayPosition;}
         public boolean displayed(){return displayed;} public boolean minuteMode(){return minuteMode;}
         public long durationMillis(){return durationMillis;}
+        public String hologramDimension(){return hologramDimension;}
+        public double hologramX(){return hologramX;}
+        public double hologramY(){return hologramY;}
+        public double hologramZ(){return hologramZ;}
+        public boolean hasHologram(){return !hologramDimension.isBlank();}
     }
 }
