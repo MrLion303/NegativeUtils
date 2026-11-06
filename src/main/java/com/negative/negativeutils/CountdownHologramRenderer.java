@@ -26,7 +26,7 @@ import java.util.Locale;
 public final class CountdownHologramRenderer {
     private static final float TIMER_SCALE = 0.15F;
     private static final float LABEL_SCALE = 0.055F;
-    private static final double MAX_RENDER_DISTANCE = 256.0D;
+    private static final double MAX_RENDER_DISTANCE = 50.0D;
 
     private CountdownHologramRenderer() {
     }

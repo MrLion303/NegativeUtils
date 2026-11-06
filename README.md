@@ -166,17 +166,24 @@ Los comandos existentes `mostrar` y `ocultar` controlan también la visibilidad 
 Este sistema crea contadores independientes sin abrir una interfaz. Solo se muestran en la bossbar y sus IDs no llevan espacios.
 
 ```text
-/negativeutils contadorminus crear <id> <minutos>
+/negativeutils contadorminus crear <id> <minutos> ["comando al terminar"]
 /negativeutils contadorminus mostrar <id>
 /negativeutils contadorminus ocultar <id>
 /negativeutils contadorminus borrar <id>
 ```
 
-Ejemplo: `/negativeutils contadorminus crear inicio 2` crea el contador `inicio` con una duración de 2 minutos, inicialmente oculto.
+Ejemplos:
+
+```mcfunction
+/negativeutils contadorminus crear inicio 2
+/negativeutils contadorminus crear inicio 2 "say El evento ha comenzado"
+```
+
+El último argumento es opcional. Escribe entre comillas el comando completo que debe ejecutarse cuando el contador llegue a cero. Se ejecuta como comando de consola con permisos de operador, una sola vez por cada activación. Si el servidor se reinicia cuando el tiempo ya venció, el comando pendiente se ejecuta al iniciar el servidor.
 
 - **Mostrar:** inicia o reinicia el contador desde la duración completa.
 - **Ocultar:** lo oculta y reinicia su duración completa.
-- **Al llegar a cero:** se oculta automáticamente y queda reiniciado para la siguiente activación.
+- **Al llegar a cero:** se oculta automáticamente y queda reiniciado para la siguiente activación. Si configuraste un comando, también se ejecuta en ese momento.
 - Los contadores rápidos no abren el panel y no permiten configurar otra posición que no sea la bossbar.
 - El ID debe ser único entre los contadores existentes. El tiempo permitido es de 1 a 525600 minutos.
 

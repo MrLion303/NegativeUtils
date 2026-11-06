@@ -71,18 +71,34 @@ public class CountdownSavedData extends SavedData {
         return countdown;
     }
 
-    public Countdown createMinuteCountdown(String id, int minutes) {
+    public Countdown createMinuteCountdown(String id, int minutes, String completionCommand) {
         String clean = sanitizeName(id);
-        if (clean.isBlank() || getByName(clean) != null || minutes < 1) return null;
+        String cleanCommand = sanitizeMinuteFinishCommand(completionCommand);
+        if (clean.isBlank() || getByName(clean) != null || minutes < 1
+                || cleanCommand == null) return null;
         long duration = minutes * 60_000L;
         Countdown countdown = new Countdown(UUID.randomUUID(), clean, false, false,
                 0L, duration, "", 0xFFFFFF, "BOSSBAR");
         countdown.minuteMode = true;
         countdown.durationMillis = duration;
+        countdown.completionCommand = cleanCommand;
         countdown.displayed = false;
         countdowns.add(countdown);
         setDirty();
         return countdown;
+    }
+
+    public static String sanitizeMinuteFinishCommand(String command) {
+        if (command == null) return "";
+        String clean = command.trim();
+        if (clean.startsWith("/")) clean = clean.substring(1).trim();
+        if (clean.length() > 1024
+                || clean.indexOf('\n') >= 0
+                || clean.indexOf('\r') >= 0
+                || clean.indexOf('\0') >= 0) {
+            return null;
+        }
+        return clean;
     }
 
     public boolean setMinuteCountdownDisplayed(UUID id, boolean displayed) {
@@ -90,6 +106,7 @@ public class CountdownSavedData extends SavedData {
         if (countdown == null || !countdown.minuteMode) return false;
         if (displayed) {
             countdown.finished = false;
+            countdown.completionCommandExecuted = false;
             countdown.pausedRemainingMillis = countdown.durationMillis;
             countdown.endTimeMillis = System.currentTimeMillis() + countdown.durationMillis;
             countdown.running = true;
@@ -97,6 +114,7 @@ public class CountdownSavedData extends SavedData {
         } else {
             countdown.running = false;
             countdown.finished = false;
+            countdown.completionCommandExecuted = false;
             countdown.pausedRemainingMillis = countdown.durationMillis;
             countdown.endTimeMillis = 0L;
             countdown.displayed = false;
@@ -180,16 +198,26 @@ public class CountdownSavedData extends SavedData {
         return removed;
     }
 
-    public boolean updateFinished() {
+    public boolean updateFinished(MinecraftServer server) {
         boolean changed = false;
+        List<String> commandsToRun = new ArrayList<>();
+        long now = System.currentTimeMillis();
+
         for (Countdown c : countdowns) {
-            if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
+            if (c.running && c.endTimeMillis <= now) {
                 c.running = false;
                 if (c.minuteMode) {
                     c.finished = false;
                     c.pausedRemainingMillis = c.durationMillis;
                     c.endTimeMillis = 0L;
                     c.displayed = false;
+
+                    if (!c.completionCommandExecuted) {
+                        c.completionCommandExecuted = true;
+                        if (!c.completionCommand.isBlank()) {
+                            commandsToRun.add(c.completionCommand);
+                        }
+                    }
                 } else {
                     c.finished = true;
                     c.pausedRemainingMillis = 0;
@@ -197,7 +225,25 @@ public class CountdownSavedData extends SavedData {
                 changed = true;
             }
         }
+
+        // Guardar el estado de finalización antes de ejecutar los comandos para evitar
+        // repetirlos en los siguientes ticks o modificar la lista durante su iteración.
         if (changed) setDirty();
+
+        for (String command : commandsToRun) {
+            try {
+                server.getCommands().performPrefixedCommand(
+                        server.createCommandSourceStack(),
+                        command
+                );
+            } catch (RuntimeException exception) {
+                com.mojang.logging.LogUtils.getLogger().error(
+                        "No se pudo ejecutar el comando de finalización de contadorminus: {}",
+                        command,
+                        exception
+                );
+            }
+        }
         return changed;
     }
 
@@ -250,6 +296,8 @@ public class CountdownSavedData extends SavedData {
         private String hologramImage = "";
         private double hologramX, hologramY, hologramZ;
         private boolean minuteMode;
+        private String completionCommand = "";
+        private boolean completionCommandExecuted;
         private long durationMillis;
         private long endTimeMillis, pausedRemainingMillis;
         private int displayColor;
@@ -282,18 +330,15 @@ public class CountdownSavedData extends SavedData {
                 c.hologramImage = savedImage == null ? "" : savedImage;
             }
             c.minuteMode = t.getBoolean("MinuteMode");
+            c.completionCommand = sanitizeMinuteFinishCommand(t.getString("CompletionCommand"));
+            if (c.completionCommand == null) c.completionCommand = "";
+            c.completionCommandExecuted = t.getBoolean("CompletionCommandExecuted");
             c.durationMillis = t.contains("Duration") ? Math.max(0, t.getLong("Duration")) : c.pausedRemainingMillis;
-            if (c.running && c.endTimeMillis <= System.currentTimeMillis()) {
+            if (c.running && c.endTimeMillis <= System.currentTimeMillis()
+                    && !c.minuteMode) {
                 c.running = false;
-                if (c.minuteMode) {
-                    c.finished = false;
-                    c.pausedRemainingMillis = c.durationMillis;
-                    c.endTimeMillis = 0L;
-                    c.displayed = false;
-                } else {
-                    c.finished = true;
-                    c.pausedRemainingMillis = 0;
-                }
+                c.finished = true;
+                c.pausedRemainingMillis = 0;
             }
             return c;
         }
@@ -302,7 +347,10 @@ public class CountdownSavedData extends SavedData {
             CompoundTag t=new CompoundTag();
             t.putUUID("Id",id); t.putString("Name",name); t.putBoolean("Running",running);
             t.putBoolean("Finished",finished); t.putBoolean("Displayed",displayed);
-            t.putBoolean("MinuteMode", minuteMode); t.putLong("Duration", durationMillis);
+            t.putBoolean("MinuteMode", minuteMode);
+            t.putString("CompletionCommand", completionCommand);
+            t.putBoolean("CompletionCommandExecuted", completionCommandExecuted);
+            t.putLong("Duration", durationMillis);
             t.putLong("EndTime",endTimeMillis); t.putLong("Remaining",getRemainingMillis()); t.putString("Text",displayText);
             t.putString("HologramDimension", hologramDimension);
             t.putString("HologramImage", hologramImage);
@@ -329,6 +377,8 @@ public class CountdownSavedData extends SavedData {
         public long pausedRemainingMillis(){return pausedRemainingMillis;} public String displayText(){return displayText;}
         public int displayColor(){return displayColor;} public String displayPosition(){return displayPosition;}
         public boolean displayed(){return displayed;} public boolean minuteMode(){return minuteMode;}
+        public String completionCommand(){return completionCommand;}
+        public boolean completionCommandExecuted(){return completionCommandExecuted;}
         public long durationMillis(){return durationMillis;}
         public String hologramDimension(){return hologramDimension;}
         public String hologramImage(){return hologramImage;}

@@ -65,7 +65,9 @@ public final class AdminPanelCommands {
                                 .then(Commands.literal("crear")
                                         .then(Commands.argument("id", StringArgumentType.word())
                                                 .then(Commands.argument("minutos", IntegerArgumentType.integer(1, 525600))
-                                                        .executes(AdminPanelCommands::createMinuteCountdown))))
+                                                        .executes(AdminPanelCommands::createMinuteCountdown)
+                                                        .then(Commands.argument("comando", StringArgumentType.string())
+                                                                .executes(AdminPanelCommands::createMinuteCountdownWithCommand)))))
                                 .then(Commands.literal("mostrar")
                                         .then(Commands.argument("id", StringArgumentType.word())
                                                 .executes(context -> setMinuteCountdownDisplayed(context, true))))
@@ -80,22 +82,47 @@ public final class AdminPanelCommands {
     }
 
     private static int createMinuteCountdown(CommandContext<CommandSourceStack> context) {
+        return createMinuteCountdown(context, "");
+    }
+
+    private static int createMinuteCountdownWithCommand(CommandContext<CommandSourceStack> context) {
+        return createMinuteCountdown(
+                context,
+                StringArgumentType.getString(context, "comando")
+        );
+    }
+
+    private static int createMinuteCountdown(
+            CommandContext<CommandSourceStack> context,
+            String completionCommand
+    ) {
         String id = StringArgumentType.getString(context, "id");
         int minutes = IntegerArgumentType.getInteger(context, "minutos");
+        String cleanCommand = CountdownSavedData.sanitizeMinuteFinishCommand(completionCommand);
+        if (cleanCommand == null) {
+            context.getSource().sendFailure(Component.literal(
+                    "El comando de finalización no puede superar 1024 caracteres ni contener saltos de línea."
+            ));
+            return 0;
+        }
         var data = CountdownSavedData.get(context.getSource().getServer());
         if (data.getByName(id) != null) {
             context.getSource().sendFailure(Component.literal("Ya existe un contador con el ID \"" + id + "\"."));
             return 0;
         }
-        var countdown = data.createMinuteCountdown(id, minutes);
+        var countdown = data.createMinuteCountdown(id, minutes, cleanCommand);
         if (countdown == null) {
             context.getSource().sendFailure(Component.literal("No se pudo crear el contador. Comprueba el ID y el tiempo."));
             return 0;
         }
         CountdownNetwork.syncAll(data);
+        String commandMessage = cleanCommand.isBlank()
+                ? ""
+                : " Se ejecutará al terminar: \"" + cleanCommand + "\".";
         context.getSource().sendSuccess(
                 () -> Component.literal("Contador \"" + countdown.name() + "\" creado para " + minutes
-                        + " minuto(s). Usa /negativeutils contadorminus mostrar " + countdown.name() + " para iniciarlo."),
+                        + " minuto(s)." + commandMessage
+                        + " Usa /negativeutils contadorminus mostrar " + countdown.name() + " para iniciarlo."),
                 false
         );
         return Command.SINGLE_SUCCESS;
