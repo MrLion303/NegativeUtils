@@ -1,7 +1,6 @@
 package com.negative.negativeutils;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackType;
@@ -29,11 +28,7 @@ public final class DiscordEmoteClientEvents {
 
         Path packDirectory = DiscordEmoteClientData.packDirectory();
         try {
-            Files.createDirectories(packDirectory);
-            Files.writeString(
-                    packDirectory.resolve("pack.mcmeta"),
-                    "{\"pack\":{\"pack_format\":15,\"description\":\"Discord bot emotes synchronized by NegativeUtils\"}}"
-            );
+            DiscordEmoteClientData.initializeResourcePack();
         } catch (IOException exception) {
             throw new IllegalStateException(
                     "Could not initialize the Discord emote resource pack.",
@@ -45,7 +40,7 @@ public final class DiscordEmoteClientEvents {
             Pack pack = Pack.readMetaAndCreate(
                     DiscordEmoteClientData.packId(),
                     Component.literal("NegativeUtils Discord Emotes"),
-                    false,
+                    true,
                     packId -> new PathPackResources(
                             DiscordEmoteClientData.packId(),
                             packDirectory,

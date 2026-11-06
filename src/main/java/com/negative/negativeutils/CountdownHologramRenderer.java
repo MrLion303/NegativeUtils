@@ -85,12 +85,6 @@ public final class CountdownHologramRenderer {
                             anchor.x, anchor.y - 0.32D, anchor.z,
                             yaw, timer, TIMER_SCALE, timerColor
                     );
-                    drawText(
-                            minecraft.font, buffers, poseStack,
-                            anchor.x, anchor.y - 0.92D, anchor.z,
-                            yaw, countdown.name(),
-                            fitLabelScale(minecraft.font, countdown.name()), 0xFFFFFFFF
-                    );
                     if (!countdown.displayText().isBlank()) {
                         drawText(
                                 minecraft.font, buffers, poseStack,
@@ -108,12 +102,6 @@ public final class CountdownHologramRenderer {
                     minecraft.font, buffers, poseStack,
                     anchor.x, anchor.y + 0.10D, anchor.z,
                     yaw, timer, TIMER_SCALE, timerColor
-            );
-
-            drawText(
-                    minecraft.font, buffers, poseStack,
-                    anchor.x, anchor.y + 1.12D, anchor.z,
-                    yaw, countdown.name(), fitLabelScale(minecraft.font, countdown.name()), 0xFFFFFFFF
             );
 
             if (!countdown.displayText().isBlank()) {
@@ -174,6 +162,7 @@ public final class CountdownHologramRenderer {
                 .normal(pose.normal(), 0.0F, 0.0F, 1.0F).endVertex();
 
         poseStack.popPose();
+        buffers.endBatch();
     }
 
     private static String formatRemaining(long remainingMillis) {
@@ -222,13 +211,14 @@ public final class CountdownHologramRenderer {
                 -font.width(text) / 2.0F,
                 -font.lineHeight / 2.0F,
                 color,
-                true,
+                false,
                 poseStack.last().pose(),
                 buffers,
                 Font.DisplayMode.SEE_THROUGH,
-                0x55000000,
+                0x00000000,
                 LightTexture.FULL_BRIGHT
         );
+        buffers.endBatch();
         poseStack.popPose();
     }
 }

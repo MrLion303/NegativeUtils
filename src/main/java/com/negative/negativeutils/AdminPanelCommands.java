@@ -50,13 +50,6 @@ public final class AdminPanelCommands {
                                         .then(Commands.literal("desactivar")
                                                 .then(Commands.argument("nombre", StringArgumentType.string())
                                                         .executes(context -> setDisplayed(context, false))))
-                                        .then(Commands.literal("posicionar")
-                                                .then(Commands.argument("nombre", StringArgumentType.string())
-                                                        .then(Commands.argument("posicion", Vec3Argument.vec3())
-                                                                .executes(context -> setHologramPosition(context, null))
-                                                                .then(Commands.argument("imagen", StringArgumentType.string())
-                                                                        .executes(context -> setHologramPosition(context,
-                                                                                StringArgumentType.getString(context, "imagen")))))))
                                         .then(Commands.literal("pocisionar")
                                                 .then(Commands.argument("nombre", StringArgumentType.string())
                                                         .then(Commands.argument("posicion", Vec3Argument.vec3())

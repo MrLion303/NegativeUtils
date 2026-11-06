@@ -46,12 +46,12 @@ public final class DiscordEmotePickerEvents {
         Button button = new Button(
                 Button.builder(
                         Component.literal("Emotes"),
-                        ignored -> DiscordEmoteClientData.ensureEmoteFontLoaded(() -> {
+                        ignored -> {
                             OVERLAYS.computeIfAbsent(screen, ignoredScreen -> new DiscordEmoteOverlay());
                             screen.setFocused(chatInput);
-                        })
+                        }
                 ).bounds(
-                        screen.width - 72,
+                        screen.width - 144,
                         screen.height - 42,
                         64,
                         20

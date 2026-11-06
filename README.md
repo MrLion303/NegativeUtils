@@ -118,13 +118,13 @@ También puedes colocar una cuenta regresiva dentro del mundo como un **hologram
 Comandos:
 
 ```text
-/negativeutils contador posicionar "Nombre del contador" <x> <y> <z>
-/negativeutils contador posicionar "Nombre del contador" <x> <y> <z> "hola.png"
+/negativeutils contador pocisionar "Nombre del contador" <x> <y> <z>
+/negativeutils contador pocisionar "Nombre del contador" <x> <y> <z> "hola.png"
 /negativeutils contador pocisionar "Nombre del contador" <x> <y> <z> "hola.png"
 /negativeutils contador desposicionar "Nombre del contador"
 ```
 
-- `posicionar` es la escritura correcta; `pocisionar` también se admite como alias.
+- El comando se utiliza como `pocisionar`; escribe el nombre del contador entre comillas para admitir espacios.
 - Puedes utilizar coordenadas absolutas o relativas con `~`.
 - El nombre del contador debe escribirse entre comillas cuando contiene espacios.
 - Si omites el nombre de imagen, se conserva la imagen que ya tenga asignada el holograma.
@@ -132,7 +132,7 @@ Comandos:
 
 #### Imagen personalizada
 
-Puedes añadir al holograma una imagen PNG del paquete de recursos. La imagen aparece grande, con su proporción original, y la cuenta regresiva se muestra debajo. El nombre y el texto personalizado del contador aparecen después del tiempo.
+Puedes añadir al holograma una imagen PNG del paquete de recursos. La imagen aparece grande, con su proporción original, y la cuenta regresiva se muestra debajo. El texto personalizado del contador aparece debajo del tiempo; el nombre interno solo identifica el contador y no se dibuja en el holograma.
 
 Cuando la cuenta regresiva llega a cero, desaparece el holograma completo, incluida la imagen. También desaparece mientras el contador esté oculto mediante los comandos `ocultar` o `desactivar`.
 
@@ -152,9 +152,10 @@ MiPaquete/
 
 Activa el paquete de recursos en cada cliente que deba visualizar el holograma. El servidor sincroniza el nombre del archivo, pero cada cliente carga la imagen desde sus propios paquetes de recursos activos.
 
-Ejemplo: para mostrar `hola.png`:
+Ejemplos:
 
 ```mcfunction
+/negativeutils contador pocisionar "Evento1" 0 60 0
 /negativeutils contador pocisionar "Inicio del evento" 100 70 200 "hola.png"
 ```
 
