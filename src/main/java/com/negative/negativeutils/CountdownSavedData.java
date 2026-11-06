@@ -105,16 +105,32 @@ public class CountdownSavedData extends SavedData {
         return true;
     }
 
-    public boolean setHologramPosition(UUID id, String dimension, Vec3 position) {
+    public boolean setHologramPosition(UUID id, String dimension, Vec3 position, String imageName) {
         Countdown countdown = getById(id);
         ResourceLocation parsedDimension = ResourceLocation.tryParse(dimension);
         if (countdown == null || parsedDimension == null || position == null) return false;
+
+        String cleanImage = imageName == null ? null : sanitizeHologramImage(imageName);
+        if (imageName != null && cleanImage == null) return false;
+
         countdown.hologramDimension = parsedDimension.toString();
         countdown.hologramX = position.x;
         countdown.hologramY = position.y;
         countdown.hologramZ = position.z;
+        if (cleanImage != null) countdown.hologramImage = cleanImage;
         setDirty();
         return true;
+    }
+
+    public static String sanitizeHologramImage(String imageName) {
+        if (imageName == null) return "";
+        String clean = imageName.trim();
+        if (clean.isEmpty()) return "";
+        if (clean.length() > 64 || clean.contains("..")
+                || !clean.matches("[a-z0-9_-][a-z0-9_.-]*\\.png")) {
+            return null;
+        }
+        return clean;
     }
 
     public boolean clearHologramPosition(UUID id) {
@@ -124,6 +140,7 @@ public class CountdownSavedData extends SavedData {
         countdown.hologramX = 0.0;
         countdown.hologramY = 0.0;
         countdown.hologramZ = 0.0;
+        countdown.hologramImage = "";
         setDirty();
         return true;
     }
@@ -230,6 +247,7 @@ public class CountdownSavedData extends SavedData {
         private boolean running, finished;
         private boolean displayed = true;
         private String hologramDimension = "";
+        private String hologramImage = "";
         private double hologramX, hologramY, hologramZ;
         private boolean minuteMode;
         private long durationMillis;
@@ -260,6 +278,8 @@ public class CountdownSavedData extends SavedData {
                 c.hologramX = t.getDouble("HologramX");
                 c.hologramY = t.getDouble("HologramY");
                 c.hologramZ = t.getDouble("HologramZ");
+                String savedImage = sanitizeHologramImage(t.getString("HologramImage"));
+                c.hologramImage = savedImage == null ? "" : savedImage;
             }
             c.minuteMode = t.getBoolean("MinuteMode");
             c.durationMillis = t.contains("Duration") ? Math.max(0, t.getLong("Duration")) : c.pausedRemainingMillis;
@@ -285,6 +305,7 @@ public class CountdownSavedData extends SavedData {
             t.putBoolean("MinuteMode", minuteMode); t.putLong("Duration", durationMillis);
             t.putLong("EndTime",endTimeMillis); t.putLong("Remaining",getRemainingMillis()); t.putString("Text",displayText);
             t.putString("HologramDimension", hologramDimension);
+            t.putString("HologramImage", hologramImage);
             t.putDouble("HologramX", hologramX); t.putDouble("HologramY", hologramY); t.putDouble("HologramZ", hologramZ);
             t.putInt("Color",displayColor); t.putString("Position",displayPosition);
             return t;
@@ -310,6 +331,7 @@ public class CountdownSavedData extends SavedData {
         public boolean displayed(){return displayed;} public boolean minuteMode(){return minuteMode;}
         public long durationMillis(){return durationMillis;}
         public String hologramDimension(){return hologramDimension;}
+        public String hologramImage(){return hologramImage;}
         public double hologramX(){return hologramX;}
         public double hologramY(){return hologramY;}
         public double hologramZ(){return hologramZ;}

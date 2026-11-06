@@ -53,11 +53,17 @@ public final class AdminPanelCommands {
                                         .then(Commands.literal("posicionar")
                                                 .then(Commands.argument("nombre", StringArgumentType.string())
                                                         .then(Commands.argument("posicion", Vec3Argument.vec3())
-                                                                .executes(AdminPanelCommands::setHologramPosition))))
+                                                                .executes(context -> setHologramPosition(context, null))
+                                                                .then(Commands.argument("imagen", StringArgumentType.string())
+                                                                        .executes(context -> setHologramPosition(context,
+                                                                                StringArgumentType.getString(context, "imagen")))))))
                                         .then(Commands.literal("pocisionar")
                                                 .then(Commands.argument("nombre", StringArgumentType.string())
                                                         .then(Commands.argument("posicion", Vec3Argument.vec3())
-                                                                .executes(AdminPanelCommands::setHologramPosition))))
+                                                                .executes(context -> setHologramPosition(context, null))
+                                                                .then(Commands.argument("imagen", StringArgumentType.string())
+                                                                        .executes(context -> setHologramPosition(context,
+                                                                                StringArgumentType.getString(context, "imagen")))))))
                                         .then(Commands.literal("desposicionar")
                                                 .then(Commands.argument("nombre", StringArgumentType.string())
                                                         .executes(AdminPanelCommands::clearHologramPosition)))
@@ -135,7 +141,7 @@ public final class AdminPanelCommands {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int setHologramPosition(CommandContext<CommandSourceStack> context) {
+    private static int setHologramPosition(CommandContext<CommandSourceStack> context, String imageName) {
         String name = StringArgumentType.getString(context, "nombre");
         var data = CountdownSavedData.get(context.getSource().getServer());
         CountdownSavedData.Countdown countdown = data.getByName(name);
@@ -146,19 +152,28 @@ public final class AdminPanelCommands {
             return 0;
         }
 
-        ServerPlayer player = context.getSource().getPlayerOrException();
+        ServerPlayer player = context.getSource().getPlayer();
+        if (player == null) {
+            context.getSource().sendFailure(Component.literal("Este comando solo puede usarse dentro del juego."));
+            return 0;
+        }
         var position = Vec3Argument.getVec3(context, "posicion");
         String dimension = player.level().dimension().location().toString();
-        if (!data.setHologramPosition(countdown.id(), dimension, position)) {
-            context.getSource().sendFailure(Component.literal("No se pudo posicionar el holograma."));
+        if (!data.setHologramPosition(countdown.id(), dimension, position, imageName)) {
+            context.getSource().sendFailure(Component.literal(
+                    "Nombre de imagen no válido. Usa un archivo PNG, por ejemplo \"hola.png\" (sin carpetas)."
+            ));
             return 0;
         }
 
         CountdownNetwork.syncAll(data);
+        String imageMessage = imageName == null
+                ? (countdown.hologramImage().isBlank() ? "" : " con imagen \"" + countdown.hologramImage() + "\"")
+                : (imageName.isBlank() ? "" : " con imagen \"" + imageName + "\"");
         context.getSource().sendSuccess(
                 () -> Component.literal("Holograma del contador \"" + countdown.name()
                         + "\" colocado en " + String.format(java.util.Locale.ROOT, "%.2f, %.2f, %.2f",
-                        position.x, position.y, position.z) + "."),
+                        position.x, position.y, position.z) + imageMessage + "."),
                 false
         );
         return Command.SINGLE_SUCCESS;

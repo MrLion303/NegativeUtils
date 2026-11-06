@@ -29,6 +29,7 @@ public final class CountdownClientData {
                         || Double.compare(oldEntry.hologramX(), newEntry.hologramX()) != 0
                         || Double.compare(oldEntry.hologramY(), newEntry.hologramY()) != 0
                         || Double.compare(oldEntry.hologramZ(), newEntry.hologramZ()) != 0
+                        || !oldEntry.hologramImage().equals(newEntry.hologramImage())
                         || oldEntry.displayColor() != newEntry.displayColor()
                         || !oldEntry.displayText().equals(newEntry.displayText())
                         || !oldEntry.displayPosition().equals(newEntry.displayPosition())) {
@@ -72,7 +73,8 @@ public final class CountdownClientData {
                     false,
                     Math.max(0, pausedRemainingMillis),
                     "",
-                    0.0, 0.0, 0.0
+                    0.0, 0.0, 0.0,
+                    ""
             ));
         }
         countdowns = List.copyOf(updated);
@@ -98,10 +100,15 @@ public final class CountdownClientData {
             String hologramDimension,
             double hologramX,
             double hologramY,
-            double hologramZ
+            double hologramZ,
+            String hologramImage
     ) {
         public boolean hasHologram() {
             return hologramDimension != null && !hologramDimension.isBlank();
+        }
+
+        public boolean hasHologramImage() {
+            return hologramImage != null && !hologramImage.isBlank();
         }
 
         public long remainingMillis() {

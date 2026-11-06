@@ -119,10 +119,31 @@ Comandos:
 
 ```text
 /negativeutils contador posicionar "Nombre del contador" <x> <y> <z>
+/negativeutils contador pocisionar "Nombre del contador" <x> <y> <z> "hola.png"
 /negativeutils contador desposicionar "Nombre del contador"
 ```
 
-El comando acepta coordenadas relativas con `~`. También reconoce `pocisionar` como alias por compatibilidad. El holograma muestra el nombre, el tiempo restante y el texto personalizado del contador. Los comandos existentes `mostrar` y `ocultar` controlan también su visibilidad.
+El comando acepta coordenadas relativas con `~`. También reconoce `pocisionar` como alias por compatibilidad.
+
+Puedes añadir una imagen PNG del paquete de recursos como parte del holograma. La imagen aparece en grande y la cuenta regresiva queda debajo; el nombre y el texto personalizado se conservan debajo del tiempo. Cuando el contador llega a cero, desaparece todo el holograma.
+
+Coloca tus imágenes directamente en la carpeta `assets/contadores` del paquete de recursos. Por ejemplo:
+
+```text
+MiPaquete/
+├── pack.mcmeta
+└── assets/
+    └── contadores/
+        └── hola.png
+```
+
+Después activa ese paquete de recursos en los clientes que deban ver el holograma y ejecuta:
+
+```text
+/negativeutils contador pocisionar "Inicio del evento" 100 70 200 "hola.png"
+```
+
+El nombre de archivo debe ser PNG, estar en minúsculas y no incluir rutas ni subcarpetas. Si omites la imagen, el comando conserva la imagen que ya tuviera asignada ese holograma. Los comandos existentes `mostrar` y `ocultar` controlan también su visibilidad.
 
 ### Contadores rápidos: `contadorminus`
 
