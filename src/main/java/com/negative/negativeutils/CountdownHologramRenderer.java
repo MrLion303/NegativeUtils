@@ -81,6 +81,7 @@ public final class CountdownHologramRenderer {
                         CountdownHologramTextures.get(countdown.hologramImage());
                 if (image != null) {
                     drawImage(buffers, poseStack, anchor, yaw, image);
+                    buffers.endBatch();
                     drawText(
                             minecraft.font, buffers, poseStack,
                             anchor.x, anchor.y - 0.32D, anchor.z,
@@ -163,7 +164,6 @@ public final class CountdownHologramRenderer {
                 .normal(pose.normal(), 0.0F, 0.0F, 1.0F).endVertex();
 
         poseStack.popPose();
-        buffers.endBatch();
     }
 
     private static String formatRemaining(long remainingMillis) {

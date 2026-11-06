@@ -17,12 +17,15 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Carga las imágenes desde assets/contadores/<nombre>.png del paquete de recursos activo.
+ * Carga las imágenes de holograma desde el paquete de recursos del cliente.
+ * Se admiten assets/contadores/<nombre>.png y assets/contadores/textures/<nombre>.png.
  */
 public final class CountdownHologramTextures {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final Map<String, TextureInfo> LOADED = new HashMap<>();
-    private static final Set<String> MISSING = new HashSet<>();
+    private static final Map<String, Long> MISSING_UNTIL = new HashMap<>();
+    private static final long MISSING_RETRY_MILLIS = 2_000L;
+    private static ResourceManager lastResourceManager;
 
     private CountdownHologramTextures() {
     }
@@ -33,21 +36,46 @@ public final class CountdownHologramTextures {
             return null;
         }
 
+        Minecraft minecraft = Minecraft.getInstance();
+        ResourceManager manager = minecraft.getResourceManager();
+
+        // Un resource manager nuevo significa que Minecraft recargó los paquetes.
+        // Las ausencias previas deben volver a comprobarse después de esa recarga.
+        if (lastResourceManager != manager) {
+            lastResourceManager = manager;
+            MISSING_UNTIL.clear();
+        }
+
         TextureInfo cached = LOADED.get(cleanName);
         if (cached != null) {
             return cached;
         }
-        if (MISSING.contains(cleanName)) {
+
+        long now = System.currentTimeMillis();
+        Long retryAt = MISSING_UNTIL.get(cleanName);
+        if (retryAt != null && now < retryAt) {
             return null;
         }
 
-        ResourceManager manager = Minecraft.getInstance().getResourceManager();
-        ResourceLocation sourceLocation = ResourceLocation.fromNamespaceAndPath("contadores", cleanName);
+        ResourceLocation sourceLocation =
+                ResourceLocation.fromNamespaceAndPath("contadores", cleanName);
         Optional<Resource> resource = manager.getResource(sourceLocation);
+
+        // Compatibilidad con paquetes que guardan las imágenes bajo textures/,
+        // que es la convención habitual de otros recursos de Minecraft.
         if (resource.isEmpty()) {
-            MISSING.add(cleanName);
-            LOGGER.warn("No se encontró la imagen {}. Debe existir en assets/contadores/{} dentro del paquete de recursos.",
-                    cleanName, cleanName);
+            sourceLocation = ResourceLocation.fromNamespaceAndPath(
+                    "contadores", "textures/" + cleanName
+            );
+            resource = manager.getResource(sourceLocation);
+        }
+
+        if (resource.isEmpty()) {
+            MISSING_UNTIL.put(cleanName, now + MISSING_RETRY_MILLIS);
+            LOGGER.warn(
+                    "No se encontró la imagen {}. Se buscó en assets/contadores/{} y assets/contadores/textures/{}.",
+                    cleanName, cleanName, cleanName
+            );
             return null;
         }
 
@@ -57,25 +85,34 @@ public final class CountdownHologramTextures {
             int height = image.getHeight();
             if (width <= 0 || height <= 0 || width > 4096 || height > 4096) {
                 image.close();
-                MISSING.add(cleanName);
-                LOGGER.warn("La imagen del holograma {} tiene dimensiones no válidas (máximo 4096x4096).", cleanName);
+                MISSING_UNTIL.put(cleanName, now + MISSING_RETRY_MILLIS);
+                LOGGER.warn(
+                        "La imagen del holograma {} tiene dimensiones no válidas (máximo 4096x4096).",
+                        cleanName
+                );
                 return null;
             }
 
             ResourceLocation textureLocation = ResourceLocation.fromNamespaceAndPath(
                     "negativeutils", "countdown_holograms/" + cleanName
             );
-            Minecraft.getInstance().getTextureManager().register(
-                    textureLocation, new DynamicTexture(image)
-            );
+            DynamicTexture dynamicTexture = new DynamicTexture(image);
+            minecraft.getTextureManager().register(textureLocation, dynamicTexture);
 
             TextureInfo info = new TextureInfo(textureLocation, width, height);
             LOADED.put(cleanName, info);
+            MISSING_UNTIL.remove(cleanName);
+            LOGGER.info(
+                    "Imagen de holograma cargada: {} ({}x{}) desde {}.",
+                    cleanName, width, height, sourceLocation
+            );
             return info;
         } catch (Exception exception) {
-            MISSING.add(cleanName);
-            LOGGER.warn("No se pudo cargar la imagen del holograma {} desde assets/contadores/{}.",
-                    cleanName, cleanName, exception);
+            MISSING_UNTIL.put(cleanName, now + MISSING_RETRY_MILLIS);
+            LOGGER.warn(
+                    "No se pudo cargar la imagen del holograma {} desde {}.",
+                    cleanName, sourceLocation, exception
+            );
             return null;
         }
     }
