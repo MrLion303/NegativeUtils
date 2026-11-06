@@ -28,8 +28,10 @@ public final class RiftRenderer extends MobRenderer<RiftEntity, RiftModel> {
         super.setupRotations(entity, poseStack, ageInTicks, rotationYaw, partialTicks);
 
         if (entity.isExitOnly()) {
+            // Rotar y escalar alrededor del centro para mantener la abertura en el mismo punto.
             poseStack.translate(0.0D, RiftEntity.MODEL_CENTER_OFFSET, 0.0D);
             poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
+            poseStack.scale(4.0F, 4.0F, 4.0F);
             poseStack.translate(0.0D, -RiftEntity.MODEL_CENTER_OFFSET, 0.0D);
         }
     }
