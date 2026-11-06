@@ -128,10 +128,12 @@ public final class CountdownHologramRenderer {
             float yaw,
             CountdownHologramTextures.TextureInfo texture
     ) {
-        float imageHeight = 2.8F;
+        // La imagen aumenta 2.5 veces sin alterar la escala del contador.
+        float imageHeight = 2.8F * 2.5F;
+        float maxImageWidth = 5.5F * 2.5F;
         float imageWidth = imageHeight * ((float) texture.width() / (float) texture.height());
-        if (imageWidth > 5.5F) {
-            float reduction = 5.5F / imageWidth;
+        if (imageWidth > maxImageWidth) {
+            float reduction = maxImageWidth / imageWidth;
             imageWidth *= reduction;
             imageHeight *= reduction;
         }
