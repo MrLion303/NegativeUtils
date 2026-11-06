@@ -113,7 +113,7 @@ También están disponibles los alias `activar` y `desactivar`:
 
 La cuenta utiliza una **fecha y hora final absoluta**, por lo que el tiempo continúa transcurriendo aunque el servidor permanezca apagado. Al volver a encenderlo, el mod calcula el tiempo restante usando la hora actual.
 
-También puedes colocar una cuenta regresiva dentro del mundo como un **holograma 3D gigante**, visible para los jugadores que estén en la misma dimensión. El holograma sigue la orientación de los jugadores y su posición queda guardada en los datos del mundo, por lo que se conserva al reiniciar el servidor.
+También puedes colocar una cuenta regresiva dentro del mundo como un **holograma 3D gigante**, visible para los jugadores que estén en la misma dimensión y a menos de 50 bloques de distancia. Al llegar a 50 bloques o más, deja de renderizarse. El holograma sigue la orientación de los jugadores y su posición queda guardada en los datos del mundo, por lo que se conserva al reiniciar el servidor.
 
 Comandos:
 
