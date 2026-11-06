@@ -67,7 +67,7 @@ public final class CountdownHologramRenderer {
                     countdown.hologramZ()
             );
             if (minecraft.player.position().distanceToSqr(anchor)
-                    > MAX_RENDER_DISTANCE * MAX_RENDER_DISTANCE) {
+                    >= MAX_RENDER_DISTANCE * MAX_RENDER_DISTANCE) {
                 continue;
             }
 
