@@ -11,7 +11,13 @@ public final class ModCreativeModeTabs {
     public static final RegistryObject<CreativeModeTab> NEGATIVEUTILS=CREATIVE_MODE_TABS.register("negativeutils",()->CreativeModeTab.builder()
         .title(Component.translatable("itemGroup.negativeutils"))
         .icon(()->ModItems.RESPAWN_WAND.get().getDefaultInstance())
-        .displayItems((parameters,output)->{output.accept(ModItems.TRAIL_WAND.get());output.accept(ModItems.RESPAWN_WAND.get());output.accept(ModBlocks.TIME_DELAY_BLOCK_ITEM.get());output.accept(ModBlocks.COMMAND_SEQUENCE_BLOCK_ITEM.get());})
+        .displayItems((parameters,output)->{
+            output.accept(ModItems.TRAIL_WAND.get());
+            output.accept(ModItems.RESPAWN_WAND.get());
+            output.accept(ModItems.RIFT_SPAWN_EGG.get());
+            output.accept(ModBlocks.TIME_DELAY_BLOCK_ITEM.get());
+            output.accept(ModBlocks.COMMAND_SEQUENCE_BLOCK_ITEM.get());
+        })
         .build());
     private ModCreativeModeTabs(){}
 }

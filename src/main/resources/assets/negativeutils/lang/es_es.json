@@ -5,5 +5,7 @@
   "block.negativeutils.command_sequence": "Bloque de Secuencias",
   "item.negativeutils.time_delay": "Bloque de Tiempo",
   "item.negativeutils.command_sequence": "Bloque de Secuencias",
-  "itemGroup.negativeutils": "NegativeUtils"
+  "itemGroup.negativeutils": "NegativeUtils",
+  "entity.negativeutils.rift": "Rift",
+  "item.negativeutils.rift_spawn_egg": "Huevo generador de Rift"
 }

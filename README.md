@@ -66,6 +66,25 @@ Desde la pantalla puedes personalizar:
 
 Cada sendero conserva su propia configuración y sus propios puntos.
 
+### Rift
+
+Rift es una entidad estática sin IA que utiliza el modelo 3D y el bucle de animación `idle` del proyecto de Blockbench.
+
+Se puede invocar mediante:
+
+```mcfunction
+/summon negativeutils:rift
+```
+
+También está disponible el huevo generador de Rift en la pestaña creativa de NegativeUtils.
+
+- Al tocar el hitbox del Rift, el jugador se teletransporta 100 bloques hacia arriba, tomando como referencia la posición del Rift.
+- En el punto de salida aparece un segundo Rift visual, acostado y orientado hacia el suelo.
+- El Rift de salida solo es decorativo y no teletransporta jugadores.
+- Cada Rift funcional conserva un único Rift visual de salida, compartido entre los jugadores que utilicen ese portal.
+
+La entidad no utiliza GeckoLib ni bibliotecas externas.
+
 ### Cuenta regresiva
 
 El mod incorpora un sistema de cuenta regresiva para eventos.
