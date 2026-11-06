@@ -66,7 +66,7 @@ public final class AdminPanelCommands {
                                         .then(Commands.argument("id", StringArgumentType.word())
                                                 .then(Commands.argument("minutos", IntegerArgumentType.integer(1, 525600))
                                                         .executes(AdminPanelCommands::createMinuteCountdown)
-                                                        .then(Commands.argument("comando", StringArgumentType.string())
+                                                        .then(Commands.argument("comando", StringArgumentType.greedyString())
                                                                 .executes(AdminPanelCommands::createMinuteCountdownWithCommand)))))
                                 .then(Commands.literal("mostrar")
                                         .then(Commands.argument("id", StringArgumentType.word())

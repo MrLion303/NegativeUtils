@@ -166,7 +166,7 @@ Los comandos existentes `mostrar` y `ocultar` controlan también la visibilidad 
 Este sistema crea contadores independientes sin abrir una interfaz. Solo se muestran en la bossbar y sus IDs no llevan espacios.
 
 ```text
-/negativeutils contadorminus crear <id> <minutos> ["comando al terminar"]
+/negativeutils contadorminus crear <id> <minutos> [comando al terminar]
 /negativeutils contadorminus mostrar <id>
 /negativeutils contadorminus ocultar <id>
 /negativeutils contadorminus borrar <id>
@@ -176,10 +176,13 @@ Ejemplos:
 
 ```mcfunction
 /negativeutils contadorminus crear inicio 2
-/negativeutils contadorminus crear inicio 2 "say El evento ha comenzado"
+/negativeutils contadorminus crear inicio 2 say El evento ha comenzado
+/negativeutils contadorminus crear aviso 1 tellraw @a "Evento iniciado"
 ```
 
-El último argumento es opcional. Escribe entre comillas el comando completo que debe ejecutarse cuando el contador llegue a cero. Se ejecuta como comando de consola con permisos de operador, una sola vez por cada activación. Si el servidor se reinicia cuando el tiempo ya venció, el comando pendiente se ejecuta al iniciar el servidor.
+El último argumento es opcional. Escribe el comando directamente después de los minutos, sin envolverlo completo entre comillas. El argumento captura todo el texto restante y conserva las comillas que formen parte del comando, por lo que funciona con comandos como `tellraw` y sus mensajes JSON. También se admite el formato anterior con comillas exteriores, por ejemplo `"say El evento ha comenzado"`.
+
+El comando se ejecuta como consola con permisos de operador, una sola vez por cada activación. Si el servidor se reinicia cuando el tiempo ya venció, el comando pendiente se ejecuta al iniciar el servidor.
 
 - **Mostrar:** inicia o reinicia el contador desde la duración completa.
 - **Ocultar:** lo oculta y reinicia su duración completa.

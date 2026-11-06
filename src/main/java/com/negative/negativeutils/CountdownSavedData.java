@@ -91,6 +91,12 @@ public class CountdownSavedData extends SavedData {
     public static String sanitizeMinuteFinishCommand(String command) {
         if (command == null) return "";
         String clean = command.trim();
+        // greedyString conserva todo el texto, incluidas comillas internas.
+        // Si se usó el formato anterior con comillas exteriores, retirarlas
+        // sin alterar las comillas que pertenecen al comando.
+        if (clean.length() >= 2 && clean.charAt(0) == '"' && clean.charAt(clean.length() - 1) == '"') {
+            clean = clean.substring(1, clean.length() - 1).trim();
+        }
         if (clean.startsWith("/")) clean = clean.substring(1).trim();
         if (clean.length() > 1024
                 || clean.indexOf('\n') >= 0
