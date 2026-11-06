@@ -159,19 +159,19 @@ public final class CountdownHologramRenderer {
         vertices.vertex(pose.pose(), left, imageHeight, 0.0F)
                 .color(255, 255, 255, 255).uv(0.0F, 0.0F)
                 .overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light)
-                .normal(pose, 0.0F, 0.0F, 1.0F).endVertex();
+                .normal(pose.normal(), 0.0F, 0.0F, 1.0F).endVertex();
         vertices.vertex(pose.pose(), left, 0.0F, 0.0F)
                 .color(255, 255, 255, 255).uv(0.0F, 1.0F)
                 .overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light)
-                .normal(pose, 0.0F, 0.0F, 1.0F).endVertex();
+                .normal(pose.normal(), 0.0F, 0.0F, 1.0F).endVertex();
         vertices.vertex(pose.pose(), right, 0.0F, 0.0F)
                 .color(255, 255, 255, 255).uv(1.0F, 1.0F)
                 .overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light)
-                .normal(pose, 0.0F, 0.0F, 1.0F).endVertex();
+                .normal(pose.normal(), 0.0F, 0.0F, 1.0F).endVertex();
         vertices.vertex(pose.pose(), right, imageHeight, 0.0F)
                 .color(255, 255, 255, 255).uv(1.0F, 0.0F)
                 .overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light)
-                .normal(pose, 0.0F, 0.0F, 1.0F).endVertex();
+                .normal(pose.normal(), 0.0F, 0.0F, 1.0F).endVertex();
 
         poseStack.popPose();
     }
