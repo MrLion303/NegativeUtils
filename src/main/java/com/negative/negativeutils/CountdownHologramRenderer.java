@@ -8,7 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.OverlayTexture;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
