@@ -113,37 +113,54 @@ También están disponibles los alias `activar` y `desactivar`:
 
 La cuenta utiliza una **fecha y hora final absoluta**, por lo que el tiempo continúa transcurriendo aunque el servidor permanezca apagado. Al volver a encenderlo, el mod calcula el tiempo restante usando la hora actual.
 
-También puedes colocar una cuenta regresiva dentro del mundo como un **holograma 3D gigante**, visible para los jugadores que estén en la misma dimensión. El valor se actualiza en tiempo real y la posición se conserva al reiniciar el servidor.
+También puedes colocar una cuenta regresiva dentro del mundo como un **holograma 3D gigante**, visible para los jugadores que estén en la misma dimensión. El holograma sigue la orientación de los jugadores y su posición queda guardada en los datos del mundo, por lo que se conserva al reiniciar el servidor.
 
 Comandos:
 
 ```text
 /negativeutils contador posicionar "Nombre del contador" <x> <y> <z>
+/negativeutils contador posicionar "Nombre del contador" <x> <y> <z> "hola.png"
 /negativeutils contador pocisionar "Nombre del contador" <x> <y> <z> "hola.png"
 /negativeutils contador desposicionar "Nombre del contador"
 ```
 
-El comando acepta coordenadas relativas con `~`. También reconoce `pocisionar` como alias por compatibilidad.
+- `posicionar` es la escritura correcta; `pocisionar` también se admite como alias.
+- Puedes utilizar coordenadas absolutas o relativas con `~`.
+- El nombre del contador debe escribirse entre comillas cuando contiene espacios.
+- Si omites el nombre de imagen, se conserva la imagen que ya tenga asignada el holograma.
+- `desposicionar` retira el holograma, pero no elimina ni modifica la cuenta regresiva.
 
-Puedes añadir una imagen PNG del paquete de recursos como parte del holograma. La imagen aparece en grande y la cuenta regresiva queda debajo; el nombre y el texto personalizado se conservan debajo del tiempo. Cuando el contador llega a cero, desaparece todo el holograma.
+#### Imagen personalizada
 
-Coloca tus imágenes directamente en la carpeta `assets/contadores` del paquete de recursos. Por ejemplo:
+Puedes añadir al holograma una imagen PNG del paquete de recursos. La imagen aparece grande, con su proporción original, y la cuenta regresiva se muestra debajo. El nombre y el texto personalizado del contador aparecen después del tiempo.
+
+Cuando la cuenta regresiva llega a cero, desaparece el holograma completo, incluida la imagen. También desaparece mientras el contador esté oculto mediante los comandos `ocultar` o `desactivar`.
+
+Coloca los archivos directamente en la carpeta `assets/contadores` del paquete de recursos. El nombre de esa carpeta es el namespace de las imágenes; no necesitas crear una carpeta `textures` ni otra subcarpeta.
+
+Estructura de ejemplo:
 
 ```text
 MiPaquete/
 ├── pack.mcmeta
 └── assets/
     └── contadores/
-        └── hola.png
+        ├── hola.png
+        ├── evento.png
+        └── logo.png
 ```
 
-Después activa ese paquete de recursos en los clientes que deban ver el holograma y ejecuta:
+Activa el paquete de recursos en cada cliente que deba visualizar el holograma. El servidor sincroniza el nombre del archivo, pero cada cliente carga la imagen desde sus propios paquetes de recursos activos.
 
-```text
+Ejemplo: para mostrar `hola.png`:
+
+```mcfunction
 /negativeutils contador pocisionar "Inicio del evento" 100 70 200 "hola.png"
 ```
 
-El nombre de archivo debe ser PNG, estar en minúsculas y no incluir rutas ni subcarpetas. Si omites la imagen, el comando conserva la imagen que ya tuviera asignada ese holograma. Los comandos existentes `mostrar` y `ocultar` controlan también su visibilidad.
+El nombre de archivo debe terminar en `.png`, utilizar minúsculas y no incluir rutas ni subcarpetas. Por ejemplo, escribe `"hola.png"`, no `"contadores/hola.png"`. Se admiten imágenes de hasta 4096 × 4096 píxeles.
+
+Los comandos existentes `mostrar` y `ocultar` controlan también la visibilidad del holograma.
 
 ### Contadores rápidos: `contadorminus`
 
