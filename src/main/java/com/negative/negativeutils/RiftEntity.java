@@ -81,7 +81,7 @@ public class RiftEntity extends PathfinderMob {
     }
 
     private void checkPlayerContacts(ServerLevel serverLevel) {
-        AABB hitbox = getBoundingBox().inflate(0.025D);
+        AABB hitbox = getRiftHitbox().inflate(0.025D);
         ArrayList<ServerPlayer> players = new ArrayList<>(
                 serverLevel.getEntitiesOfClass(
                         ServerPlayer.class,
@@ -148,8 +148,7 @@ public class RiftEntity extends PathfinderMob {
         return exit;
     }
 
-    @Override
-    public AABB getBoundingBox() {
+    private AABB getRiftHitbox() {
         // Caja delgada delante del plano del modelo; rota con la orientación del Rift.
         double yaw = Math.toRadians(getYRot());
         double cos = Math.abs(Math.cos(yaw));
@@ -186,7 +185,7 @@ public class RiftEntity extends PathfinderMob {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("ExitOnly", isExitOnly());
         if (exitRiftUuid != null) {
@@ -195,7 +194,7 @@ public class RiftEntity extends PathfinderMob {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         setExitOnly(tag.getBoolean("ExitOnly"));
         if (tag.hasUUID("ExitRift")) {
