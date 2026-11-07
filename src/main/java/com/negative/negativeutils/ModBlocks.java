@@ -2,6 +2,7 @@ package com.negative.negativeutils;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -81,7 +82,7 @@ public final class ModBlocks {
                     "comunicador",
                     () -> new BlockItem(
                             COMMUNICATOR_BLOCK.get(),
-                            new Item.Properties()
+                            new Item.Properties().rarity(Rarity.EPIC)
                     )
             );
 

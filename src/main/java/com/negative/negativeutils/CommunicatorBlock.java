@@ -22,69 +22,40 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class CommunicatorBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    public static final EnumProperty<AttachFace> FACE = BlockStateProperties.ATTACH_FACE;
-
     // Geometría de selección alineada con el modelo personalizado (4x1x8 píxeles).
     private static final VoxelShape FLOOR_NS =
             Block.box(6.0D, 0.0D, 4.0D, 10.0D, 1.0D, 12.0D);
     private static final VoxelShape FLOOR_EW =
             Block.box(4.0D, 0.0D, 6.0D, 12.0D, 1.0D, 10.0D);
 
-    private static final VoxelShape CEILING_NS =
-            Block.box(6.0D, 15.0D, 4.0D, 10.0D, 16.0D, 12.0D);
-    private static final VoxelShape CEILING_EW =
-            Block.box(4.0D, 15.0D, 6.0D, 12.0D, 16.0D, 10.0D);
-
-    private static final VoxelShape NORTH_SHAPE =
-            Block.box(6.0D, 4.0D, 0.0D, 10.0D, 12.0D, 1.0D);
-    private static final VoxelShape EAST_SHAPE =
-            Block.box(15.0D, 4.0D, 6.0D, 16.0D, 12.0D, 10.0D);
-    private static final VoxelShape SOUTH_SHAPE =
-            Block.box(6.0D, 4.0D, 15.0D, 10.0D, 12.0D, 16.0D);
-    private static final VoxelShape WEST_SHAPE =
-            Block.box(0.0D, 4.0D, 6.0D, 1.0D, 12.0D, 10.0D);
-
     public CommunicatorBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
-                .setValue(FACE, AttachFace.WALL));
+                .setValue(FACING, Direction.NORTH));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
-        builder.add(FACING, FACE);
+        builder.add(FACING);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction clickedFace = context.getClickedFace();
-        BlockState state;
-
-        if (clickedFace == Direction.UP) {
-            state = defaultBlockState()
-                    .setValue(FACE, AttachFace.FLOOR)
-                    .setValue(FACING, context.getHorizontalDirection().getOpposite());
-        } else if (clickedFace == Direction.DOWN) {
-            state = defaultBlockState()
-                    .setValue(FACE, AttachFace.CEILING)
-                    .setValue(FACING, context.getHorizontalDirection().getOpposite());
-        } else {
-            state = defaultBlockState()
-                    .setValue(FACE, AttachFace.WALL)
-                    .setValue(FACING, clickedFace);
+        // El Comunicador solo se puede colocar sobre la cara superior de un bloque.
+        if (context.getClickedFace() != Direction.UP) {
+            return null;
         }
+
+        BlockState state = defaultBlockState()
+                .setValue(FACING, context.getHorizontalDirection().getOpposite());
 
         return canSurvive(state, context.getLevel(), context.getClickedPos())
                 ? state
@@ -93,24 +64,12 @@ public final class CommunicatorBlock extends BaseEntityBlock {
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
-        Direction supportDirection = getSupportDirection(state);
-        BlockPos supportPos = pos.relative(supportDirection);
+        BlockPos supportPos = pos.below();
         return level.getBlockState(supportPos).isFaceSturdy(
                 level,
                 supportPos,
-                supportDirection.getOpposite()
+                Direction.UP
         );
-    }
-
-    private static Direction getSupportDirection(BlockState state) {
-        AttachFace face = state.getValue(FACE);
-        if (face == AttachFace.FLOOR) {
-            return Direction.DOWN;
-        }
-        if (face == AttachFace.CEILING) {
-            return Direction.UP;
-        }
-        return state.getValue(FACING).getOpposite();
     }
 
     @Override
@@ -122,8 +81,7 @@ public final class CommunicatorBlock extends BaseEntityBlock {
             BlockPos pos,
             BlockPos neighborPos
     ) {
-        if (direction == getSupportDirection(state)
-                && !canSurvive(state, level, pos)) {
+        if (direction == Direction.DOWN && !canSurvive(state, level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
@@ -136,22 +94,9 @@ public final class CommunicatorBlock extends BaseEntityBlock {
             BlockPos pos,
             CollisionContext context
     ) {
-        Direction facing = state.getValue(FACING);
-
-        if (state.getValue(FACE) == AttachFace.FLOOR) {
-            return facing.getAxis() == Direction.Axis.X ? FLOOR_EW : FLOOR_NS;
-        }
-        if (state.getValue(FACE) == AttachFace.CEILING) {
-            return facing.getAxis() == Direction.Axis.X ? CEILING_EW : CEILING_NS;
-        }
-
-        return switch (facing) {
-            case NORTH -> NORTH_SHAPE;
-            case EAST -> EAST_SHAPE;
-            case SOUTH -> SOUTH_SHAPE;
-            case WEST -> WEST_SHAPE;
-            default -> Shapes.block();
-        };
+        return state.getValue(FACING).getAxis() == Direction.Axis.X
+                ? FLOOR_EW
+                : FLOOR_NS;
     }
 
     @Override
