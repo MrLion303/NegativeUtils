@@ -79,7 +79,6 @@ public class RiftEntity extends PathfinderMob {
             return;
         }
         exitExpiresAt = serverLevel.getGameTime() + EXIT_LIFETIME_TICKS;
-        setChanged();
     }
 
     private boolean isExitExpired(ServerLevel serverLevel) {
