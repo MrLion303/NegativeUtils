@@ -3,22 +3,22 @@
     "facing=north": {
       "model": "negativeutils:block/comunicador",
       "y": 0,
-      "uvlock": true
+      "uvlock": false
     },
     "facing=east": {
       "model": "negativeutils:block/comunicador",
       "y": 90,
-      "uvlock": true
+      "uvlock": false
     },
     "facing=south": {
       "model": "negativeutils:block/comunicador",
       "y": 180,
-      "uvlock": true
+      "uvlock": false
     },
     "facing=west": {
       "model": "negativeutils:block/comunicador",
       "y": 270,
-      "uvlock": true
+      "uvlock": false
     }
   }
 }
