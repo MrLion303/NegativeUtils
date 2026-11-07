@@ -145,9 +145,7 @@ public class RiftEntity extends PathfinderMob {
             double vertical = Math.sin(angle) * speed;
             double depth = (random.nextDouble() - 0.5D) * 0.018D;
 
-            ParticleOptions particle = random.nextFloat() < 0.72F
-                    ? ParticleTypes.SOUL_FIRE_FLAME
-                    : ParticleTypes.END_ROD;
+            ParticleOptions particle = ParticleTypes.END_ROD;
 
             level().addParticle(
                     particle,
@@ -170,9 +168,7 @@ public class RiftEntity extends PathfinderMob {
         for (int i = 0; i < 64; i++) {
             double angle = random.nextDouble() * Math.PI * 2.0D;
             double speed = 0.045D + random.nextDouble() * 0.13D;
-            ParticleOptions particle = i % 4 == 0
-                    ? ParticleTypes.END_ROD
-                    : ParticleTypes.SOUL_FIRE_FLAME;
+            ParticleOptions particle = ParticleTypes.END_ROD;
 
             level().addParticle(
                     particle,
