@@ -35,18 +35,25 @@ public final class CommunicatorBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<AttachFace> FACE = BlockStateProperties.ATTACH_FACE;
 
-    private static final VoxelShape FLOOR_SHAPE =
-            Block.box(5.0D, 0.0D, 6.0D, 11.0D, 2.0D, 10.0D);
-    private static final VoxelShape CEILING_SHAPE =
-            Block.box(5.0D, 14.0D, 6.0D, 11.0D, 16.0D, 10.0D);
+    // Geometría de selección alineada con el modelo personalizado (4x1x8 píxeles).
+    private static final VoxelShape FLOOR_NS =
+            Block.box(6.0D, 0.0D, 4.0D, 10.0D, 1.0D, 12.0D);
+    private static final VoxelShape FLOOR_EW =
+            Block.box(4.0D, 0.0D, 6.0D, 12.0D, 1.0D, 10.0D);
+
+    private static final VoxelShape CEILING_NS =
+            Block.box(6.0D, 15.0D, 4.0D, 10.0D, 16.0D, 12.0D);
+    private static final VoxelShape CEILING_EW =
+            Block.box(4.0D, 15.0D, 6.0D, 12.0D, 16.0D, 10.0D);
+
     private static final VoxelShape NORTH_SHAPE =
-            Block.box(5.0D, 6.0D, 0.0D, 11.0D, 10.0D, 2.0D);
-    private static final VoxelShape SOUTH_SHAPE =
-            Block.box(5.0D, 6.0D, 14.0D, 11.0D, 10.0D, 16.0D);
-    private static final VoxelShape WEST_SHAPE =
-            Block.box(0.0D, 6.0D, 5.0D, 2.0D, 10.0D, 11.0D);
+            Block.box(6.0D, 4.0D, 0.0D, 10.0D, 12.0D, 1.0D);
     private static final VoxelShape EAST_SHAPE =
-            Block.box(14.0D, 6.0D, 5.0D, 16.0D, 10.0D, 11.0D);
+            Block.box(15.0D, 4.0D, 6.0D, 16.0D, 12.0D, 10.0D);
+    private static final VoxelShape SOUTH_SHAPE =
+            Block.box(6.0D, 4.0D, 15.0D, 10.0D, 12.0D, 16.0D);
+    private static final VoxelShape WEST_SHAPE =
+            Block.box(0.0D, 4.0D, 6.0D, 1.0D, 12.0D, 10.0D);
 
     public CommunicatorBlock(Properties properties) {
         super(properties);
@@ -129,18 +136,20 @@ public final class CommunicatorBlock extends BaseEntityBlock {
             BlockPos pos,
             CollisionContext context
     ) {
+        Direction facing = state.getValue(FACING);
+
         if (state.getValue(FACE) == AttachFace.FLOOR) {
-            return FLOOR_SHAPE;
+            return facing.getAxis() == Direction.Axis.X ? FLOOR_EW : FLOOR_NS;
         }
         if (state.getValue(FACE) == AttachFace.CEILING) {
-            return CEILING_SHAPE;
+            return facing.getAxis() == Direction.Axis.X ? CEILING_EW : CEILING_NS;
         }
 
-        return switch (state.getValue(FACING)) {
+        return switch (facing) {
             case NORTH -> NORTH_SHAPE;
+            case EAST -> EAST_SHAPE;
             case SOUTH -> SOUTH_SHAPE;
             case WEST -> WEST_SHAPE;
-            case EAST -> EAST_SHAPE;
             default -> Shapes.block();
         };
     }
