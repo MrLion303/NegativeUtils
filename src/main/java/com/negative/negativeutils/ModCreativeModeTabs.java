@@ -17,6 +17,7 @@ public final class ModCreativeModeTabs {
             output.accept(ModItems.RIFT_SPAWN_EGG.get());
             output.accept(ModBlocks.TIME_DELAY_BLOCK_ITEM.get());
             output.accept(ModBlocks.COMMAND_SEQUENCE_BLOCK_ITEM.get());
+            output.accept(ModBlocks.COMMUNICATOR_BLOCK_ITEM.get());
         })
         .build());
     private ModCreativeModeTabs(){}

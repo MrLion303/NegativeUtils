@@ -7,5 +7,6 @@
   "item.negativeutils.command_sequence": "Bloque de Secuencias",
   "itemGroup.negativeutils": "NegativeUtils",
   "entity.negativeutils.rift": "Rift",
-  "item.negativeutils.rift_spawn_egg": "Huevo generador de Rift"
+  "item.negativeutils.rift_spawn_egg": "Huevo generador de Rift",
+  "block.negativeutils.comunicador": "Comunicador"
 }

@@ -21,7 +21,32 @@ public class CommandSequenceBlockEntity extends BlockEntity {
     private int waitTicks;
 
     public CommandSequenceBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlocks.COMMAND_SEQUENCE_BLOCK_ENTITY.get(), pos, state);
+        this(ModBlocks.COMMAND_SEQUENCE_BLOCK_ENTITY.get(), pos, state);
+    }
+
+    protected CommandSequenceBlockEntity(
+            net.minecraft.world.level.block.entity.BlockEntityType<?> type,
+            BlockPos pos,
+            BlockState state
+    ) {
+        super(type, pos, state);
+    }
+
+    public boolean startSequence() {
+        if (running || commands.isBlank()) {
+            return false;
+        }
+        running = true;
+        lineIndex = 0;
+        waitTicks = 0;
+        setChanged();
+        return true;
+    }
+
+    public void tickSequence(ServerLevel serverLevel) {
+        if (running) {
+            runUntilWait(serverLevel);
+        }
     }
 
     public static void serverTick(
@@ -39,16 +64,10 @@ public class CommandSequenceBlockEntity extends BlockEntity {
             blockEntity.inputWasPowered = false;
         } else if (!blockEntity.inputWasPowered) {
             blockEntity.inputWasPowered = true;
-            if (!blockEntity.running && !blockEntity.commands.isBlank()) {
-                blockEntity.running = true;
-                blockEntity.lineIndex = 0;
-                blockEntity.waitTicks = 0;
-            }
+            blockEntity.startSequence();
         }
 
-        if (blockEntity.running) {
-            blockEntity.runUntilWait(serverLevel);
-        }
+        blockEntity.tickSequence(serverLevel);
     }
 
     public String getCommands() {

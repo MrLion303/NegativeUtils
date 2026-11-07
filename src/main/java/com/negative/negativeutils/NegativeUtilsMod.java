@@ -26,6 +26,7 @@ public final class NegativeUtilsMod {
         WaypointNetwork.register();
         CameraNetwork.register();
         CommandSequenceNetwork.register();
+        CommunicatorNetwork.register();
         DiscordEmoteNetwork.register();
     }
 }

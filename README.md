@@ -247,6 +247,18 @@ Esto resulta útil para:
 - Teletransportes.
 - Activación de mecanismos.
 
+### Comunicador
+
+El **Comunicador** es un botón físico que almacena y ejecuta una secuencia de comandos. Utiliza la misma interfaz del Bloque de Secuencias, incluyendo el editor multilínea y las pausas `wait <segundos>`.
+
+- Colócalo en una superficie como un botón de piedra. La textura de piedra es provisional.
+- Un clic derecho normal ejecuta la secuencia guardada.
+- Si un operador se agacha y hace clic derecho, abre el editor para modificar la secuencia.
+- Los jugadores sin permisos de operador no pueden abrir el editor.
+- El Comunicador no se aplasta, no cambia de estado al pulsarlo y no emite señales de redstone.
+- Las secuencias se guardan en el mundo y se conservan al reiniciar el servidor.
+- Puedes usar comandos normales y `wait <segundos>` para introducir pausas entre ellos.
+
 ### Emotes de Discord
 
 NegativeUtils incluye un sistema para utilizar emotes de Discord dentro del chat de Minecraft.

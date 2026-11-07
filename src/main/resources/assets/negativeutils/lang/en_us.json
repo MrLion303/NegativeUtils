@@ -7,5 +7,6 @@
   "item.negativeutils.command_sequence": "Sequence Block",
   "itemGroup.negativeutils": "NegativeUtils",
   "entity.negativeutils.rift": "Rift",
-  "item.negativeutils.rift_spawn_egg": "Rift Spawn Egg"
+  "item.negativeutils.rift_spawn_egg": "Rift Spawn Egg",
+  "block.negativeutils.comunicador": "Communicator"
 }

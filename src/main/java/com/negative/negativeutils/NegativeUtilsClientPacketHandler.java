@@ -21,6 +21,12 @@ final class NegativeUtilsClientPacketHandler {
         );
     }
 
+    static void openCommunicatorEditor(BlockPos pos, String commands) {
+        Minecraft.getInstance().setScreen(
+                new CommandSequenceScreen(pos, commands, true)
+        );
+    }
+
     static void openDiscordTokenScreen() {
         Minecraft.getInstance().setScreen(new DiscordTokenScreen());
     }

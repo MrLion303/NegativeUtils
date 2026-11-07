@@ -46,6 +46,18 @@ public final class ModBlocks {
                     )
             );
 
+    public static final RegistryObject<Block> COMMUNICATOR_BLOCK =
+            BLOCKS.register(
+                    "comunicador",
+                    () -> new CommunicatorBlock(
+                            BlockBehaviour.Properties.of()
+                                    .strength(0.5F)
+                                    .sound(SoundType.STONE)
+                                    .noOcclusion()
+                                    .isRedstoneConductor((state, level, pos) -> false)
+                    )
+            );
+
     public static final RegistryObject<Item> TIME_DELAY_BLOCK_ITEM =
             ITEMS.register(
                     "time_delay",
@@ -60,6 +72,15 @@ public final class ModBlocks {
                     "command_sequence",
                     () -> new BlockItem(
                             COMMAND_SEQUENCE_BLOCK.get(),
+                            new Item.Properties()
+                    )
+            );
+
+    public static final RegistryObject<Item> COMMUNICATOR_BLOCK_ITEM =
+            ITEMS.register(
+                    "comunicador",
+                    () -> new BlockItem(
+                            COMMUNICATOR_BLOCK.get(),
                             new Item.Properties()
                     )
             );
@@ -81,6 +102,16 @@ public final class ModBlocks {
                     () -> BlockEntityType.Builder.of(
                             CommandSequenceBlockEntity::new,
                             COMMAND_SEQUENCE_BLOCK.get()
+                    ).build(null)
+            );
+
+    public static final RegistryObject<BlockEntityType<CommunicatorBlockEntity>>
+            COMMUNICATOR_BLOCK_ENTITY =
+            BLOCK_ENTITY_TYPES.register(
+                    "comunicador",
+                    () -> BlockEntityType.Builder.of(
+                            CommunicatorBlockEntity::new,
+                            COMMUNICATOR_BLOCK.get()
                     ).build(null)
             );
 

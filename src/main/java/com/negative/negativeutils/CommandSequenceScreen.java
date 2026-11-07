@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 
 public class CommandSequenceScreen extends Screen {
     private final BlockPos blockPos;
+    private final boolean communicator;
     private String currentCommands;
     private CodeEditor editor;
     private int editorX;
@@ -16,9 +17,14 @@ public class CommandSequenceScreen extends Screen {
     private int editorHeight;
 
     public CommandSequenceScreen(BlockPos blockPos, String commands) {
-        super(Component.literal("Editor de secuencias"));
+        this(blockPos, commands, false);
+    }
+
+    public CommandSequenceScreen(BlockPos blockPos, String commands, boolean communicator) {
+        super(Component.literal(communicator ? "Editor del comunicador" : "Editor de secuencias"));
         this.blockPos = blockPos;
         this.currentCommands = commands;
+        this.communicator = communicator;
     }
 
     @Override
@@ -69,7 +75,11 @@ public class CommandSequenceScreen extends Screen {
     }
 
     private void saveCommands() {
-        CommandSequenceNetwork.saveCommands(blockPos, editor.getValue());
+        if (communicator) {
+            CommunicatorNetwork.saveCommands(blockPos, editor.getValue());
+        } else {
+            CommandSequenceNetwork.saveCommands(blockPos, editor.getValue());
+        }
         onClose();
     }
 
@@ -92,14 +102,16 @@ public class CommandSequenceScreen extends Screen {
         NegativeUtilsGuiStyle.renderFrame(graphics, width, height);
         graphics.drawCenteredString(
                 this.font,
-                "Bloque de secuencias",
+                communicator ? "Comunicador" : "Bloque de secuencias",
                 this.width / 2,
                 24,
                 0xFFFFFF
         );
         graphics.drawCenteredString(
                 this.font,
-                "Dale energía de redstone para ejecutar la secuencia.",
+                communicator
+                        ? "Dale clic derecho normal para ejecutar la secuencia."
+                        : "Dale energía de redstone para ejecutar la secuencia.",
                 this.width / 2,
                 42,
                 0xBBBBBB
