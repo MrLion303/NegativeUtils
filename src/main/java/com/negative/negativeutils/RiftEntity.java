@@ -28,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 public class RiftEntity extends PathfinderMob {
     public static final double HEIGHT_TO_EXIT = 100.0D;
     public static final double MODEL_CENTER_OFFSET = 1.11D;
+    public static final float EXIT_RENDER_SCALE = 12.0F;
 
     private static final int EXIT_LIFETIME_TICKS = 20 * 30;
     private static final byte EXIT_DISAPPEAR_EVENT = 60;
@@ -160,24 +161,44 @@ public class RiftEntity extends PathfinderMob {
     }
 
     private void spawnExitDisappearanceParticles() {
-        // El rift superior está acostado: la explosión se abre radialmente sobre el plano XZ.
+        // El modelo superior se renderiza a 12x y ocupa aproximadamente 16x20 bloques en el suelo.
+        // Las partículas cubren ahora esa misma superficie, en lugar de concentrarse en el centro.
         double centerX = getX();
         double centerY = getY() + MODEL_CENTER_OFFSET;
         double centerZ = getZ();
 
-        for (int i = 0; i < 64; i++) {
-            double angle = random.nextDouble() * Math.PI * 2.0D;
-            double speed = 0.045D + random.nextDouble() * 0.13D;
-            ParticleOptions particle = ParticleTypes.END_ROD;
+        double yaw = Math.toRadians(getYRot());
+        double widthX = Math.cos(yaw);
+        double widthZ = Math.sin(yaw);
+        double lengthX = -widthZ;
+        double lengthZ = widthX;
 
+        final double halfWidth = 8.0D;
+        final double halfLength = 10.0D;
+
+        for (int i = 0; i < 192; i++) {
+            double angle = random.nextDouble() * Math.PI * 2.0D;
+            double radius = Math.sqrt(random.nextDouble());
+            double localX = Math.cos(angle) * halfWidth * radius;
+            double localZ = Math.sin(angle) * halfLength * radius;
+            double speed = 0.045D + random.nextDouble() * 0.13D;
+
+            double offsetX = widthX * localX + lengthX * localZ;
+            double offsetZ = widthZ * localX + lengthZ * localZ;
+            double velocityX = widthX * Math.cos(angle) * speed
+                    + lengthX * Math.sin(angle) * speed;
+            double velocityZ = widthZ * Math.cos(angle) * speed
+                    + lengthZ * Math.sin(angle) * speed;
+
+            ParticleOptions particle = ParticleTypes.END_ROD;
             level().addParticle(
                     particle,
-                    centerX + (random.nextDouble() - 0.5D) * 0.18D,
-                    centerY + (random.nextDouble() - 0.5D) * 0.10D,
-                    centerZ + (random.nextDouble() - 0.5D) * 0.18D,
-                    Math.cos(angle) * speed,
+                    centerX + offsetX,
+                    centerY + (random.nextDouble() - 0.5D) * 0.12D,
+                    centerZ + offsetZ,
+                    velocityX,
                     (random.nextDouble() - 0.35D) * speed * 0.65D,
-                    Math.sin(angle) * speed
+                    velocityZ
             );
         }
     }

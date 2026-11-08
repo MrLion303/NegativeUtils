@@ -32,7 +32,7 @@ public final class RiftRenderer extends MobRenderer<RiftEntity, RiftModel> {
             // La transformación conserva el centro de la abertura al girarla sobre el suelo.
             poseStack.translate(0.0D, RiftEntity.MODEL_CENTER_OFFSET, 0.0D);
             poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
-            poseStack.scale(12.0F, 12.0F, 12.0F);
+            poseStack.scale(RiftEntity.EXIT_RENDER_SCALE, RiftEntity.EXIT_RENDER_SCALE, RiftEntity.EXIT_RENDER_SCALE);
             poseStack.translate(0.0D, -RiftEntity.MODEL_CENTER_OFFSET, 0.0D);
         }
     }
