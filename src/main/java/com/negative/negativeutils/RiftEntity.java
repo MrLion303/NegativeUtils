@@ -48,7 +48,7 @@ public class RiftEntity extends PathfinderMob {
 
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 1.0D)
+                .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.0D);
     }
 
@@ -295,17 +295,12 @@ public class RiftEntity extends PathfinderMob {
 
     @Override
     public boolean isPickable() {
-        return false;
+        return !isRemoved();
     }
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        return false;
-    }
-
-    @Override
-    public boolean isInvulnerableTo(DamageSource source) {
-        return true;
+        return super.hurt(source, amount);
     }
 
     @Override
