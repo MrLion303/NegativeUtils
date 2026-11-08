@@ -76,6 +76,27 @@ public final class YoCommands {
                                         )
                         )
         );
+        event.getDispatcher().register(
+                Commands.literal("negativeutils")
+                        .requires(source -> source.hasPermission(2))
+                        .then(
+                                Commands.literal("rift")
+                                        .then(
+                                                Commands.literal("disable")
+                                                        .executes(context -> setNaturalRiftSpawning(
+                                                                context.getSource(),
+                                                                false
+                                                        ))
+                                        )
+                                        .then(
+                                                Commands.literal("enable")
+                                                        .executes(context -> setNaturalRiftSpawning(
+                                                                context.getSource(),
+                                                                true
+                                                        ))
+                                        )
+                        )
+        );
     }
 
     private static int teleport(ServerPlayer player) {
@@ -125,4 +146,33 @@ public final class YoCommands {
                 position.z
         );
     }
+    private static int setNaturalRiftSpawning(
+            net.minecraft.commands.CommandSourceStack source,
+            boolean enabled
+    ) {
+        RiftSpawnSettingsSavedData settings = RiftSpawnSettingsSavedData.get(source.getServer());
+        if (settings.isEnabled() == enabled) {
+            source.sendSuccess(
+                    () -> Component.literal(
+                            enabled
+                                    ? "El spawneo natural de rifts ya estaba habilitado."
+                                    : "El spawneo natural de rifts ya estaba deshabilitado."
+                    ),
+                    true
+            );
+            return Command.SINGLE_SUCCESS;
+        }
+
+        settings.setEnabled(enabled);
+        source.sendSuccess(
+                () -> Component.literal(
+                        enabled
+                                ? "Has habilitado el spawneo natural de rifts."
+                                : "Has deshabilitado el spawneo natural de rifts."
+                ),
+                true
+        );
+        return Command.SINGLE_SUCCESS;
+    }
+
 }

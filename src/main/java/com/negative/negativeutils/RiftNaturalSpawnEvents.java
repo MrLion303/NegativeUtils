@@ -36,6 +36,11 @@ public final class RiftNaturalSpawnEvents {
             return;
         }
 
+        // El interruptor es global y se guarda en los datos del Overworld.
+        if (!RiftSpawnSettingsSavedData.get(level.getServer()).isEnabled()) {
+            return;
+        }
+
         ChunkPos chunkPos = chunk.getPos();
         int minBlockX = chunkPos.getMinBlockX();
         int minBlockZ = chunkPos.getMinBlockZ();
