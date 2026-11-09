@@ -76,6 +76,7 @@ public final class YoCommands {
                                         )
                         )
         );
+
         event.getDispatcher().register(
                 Commands.literal("negativeutils")
                         .requires(source -> source.hasPermission(2))
@@ -91,6 +92,23 @@ public final class YoCommands {
                                         .then(
                                                 Commands.literal("enable")
                                                         .executes(context -> setNaturalRiftSpawning(
+                                                                context.getSource(),
+                                                                true
+                                                        ))
+                                        )
+                        )
+                        .then(
+                                Commands.literal("parcool")
+                                        .then(
+                                                Commands.literal("disable")
+                                                        .executes(context -> ParCoolIntegration.setEnabled(
+                                                                context.getSource(),
+                                                                false
+                                                        ))
+                                        )
+                                        .then(
+                                                Commands.literal("enable")
+                                                        .executes(context -> ParCoolIntegration.setEnabled(
                                                                 context.getSource(),
                                                                 true
                                                         ))
@@ -146,6 +164,7 @@ public final class YoCommands {
                 position.z
         );
     }
+
     private static int setNaturalRiftSpawning(
             net.minecraft.commands.CommandSourceStack source,
             boolean enabled
@@ -174,5 +193,4 @@ public final class YoCommands {
         );
         return Command.SINGLE_SUCCESS;
     }
-
 }
