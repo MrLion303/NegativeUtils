@@ -114,6 +114,23 @@ public final class YoCommands {
                                                         ))
                                         )
                         )
+                        .then(
+                                Commands.literal("voicechat")
+                                        .then(
+                                                Commands.literal("mute")
+                                                        .executes(context -> VoicechatMuteControl.setMuted(
+                                                                context.getSource(),
+                                                                true
+                                                        ))
+                                        )
+                                        .then(
+                                                Commands.literal("unmute")
+                                                        .executes(context -> VoicechatMuteControl.setMuted(
+                                                                context.getSource(),
+                                                                false
+                                                        ))
+                                        )
+                        )
         );
     }
 
