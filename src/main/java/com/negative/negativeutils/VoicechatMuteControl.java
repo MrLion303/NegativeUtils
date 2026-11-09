@@ -8,6 +8,8 @@ import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Method;
 
@@ -19,6 +21,7 @@ import java.lang.reflect.Method;
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class VoicechatMuteControl {
+    private static final Logger LOGGER = LogManager.getLogger();
     private static final String VOICECHAT_MOD_ID = "voicechat";
     private static final String PLUGIN_CLASS =
             "com.negative.negativeutils.VoicechatPluginIntegration";
@@ -76,7 +79,7 @@ public final class VoicechatMuteControl {
             Method refresh = plugin.getMethod("refreshConnections", MinecraftServer.class);
             refresh.invoke(null, server);
         } catch (ReflectiveOperationException | LinkageError exception) {
-            NegativeUtilsMod.LOGGER.error(
+            LOGGER.error(
                     "No se pudo actualizar el silencio global de Simple Voice Chat.",
                     exception
             );
