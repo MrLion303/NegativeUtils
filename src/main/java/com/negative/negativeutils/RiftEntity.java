@@ -115,7 +115,10 @@ public class RiftEntity extends PathfinderMob {
         }
 
         if (level().isClientSide) {
-            spawnCenterParticles();
+            // Menos partículas durante la animación continua del Rift.
+            if (tickCount % 3 == 0) {
+                spawnCenterParticles();
+            }
             return;
         }
 
@@ -139,7 +142,7 @@ public class RiftEntity extends PathfinderMob {
         double centerY = getY() + MODEL_CENTER_OFFSET;
         double centerZ = getZ();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 1; i++) {
             double angle = random.nextDouble() * Math.PI * 2.0D;
             double speed = 0.035D + random.nextDouble() * 0.075D;
             double across = Math.cos(angle) * speed;
@@ -176,7 +179,7 @@ public class RiftEntity extends PathfinderMob {
         final double halfWidth = 8.0D;
         final double halfLength = 10.0D;
 
-        for (int i = 0; i < 192; i++) {
+        for (int i = 0; i < 32; i++) {
             double angle = random.nextDouble() * Math.PI * 2.0D;
             double radius = Math.sqrt(random.nextDouble());
             double localX = Math.cos(angle) * halfWidth * radius;
