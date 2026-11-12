@@ -3,28 +3,21 @@ package com.negative.negativeutils;
 import com.mojang.brigadier.Command;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.lang.reflect.Method;
 
 /**
- * Control opcional de Simple Voice Chat sin referencias directas a su API.
+ * Puente entre los comandos, el estado persistente del mundo y el listener de SVC.
+ * No carga clases de la API de Simple Voice Chat cuando el mod no está instalado.
  */
 @Mod.EventBusSubscriber(
         modid = NegativeUtilsMod.MOD_ID,
         bus = Mod.EventBusSubscriber.Bus.FORGE
 )
 public final class VoicechatMuteControl {
-    private static final Logger LOGGER = LogManager.getLogger();
     private static final String VOICECHAT_MOD_ID = "voicechat";
-    private static final String PLUGIN_CLASS =
-            "com.negative.negativeutils.VoicechatPluginIntegration";
 
     private VoicechatMuteControl() {
     }
@@ -32,14 +25,15 @@ public final class VoicechatMuteControl {
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         boolean muted = VoicechatMuteSavedData.get(event.getServer()).isMuted();
-        updatePlugin(event.getServer(), muted);
+        VoicechatGlobalMuteManager.setGloballyMuted(muted);
     }
 
     public static int setMuted(CommandSourceStack source, boolean muted) {
-        MinecraftServer server = source.getServer();
-        VoicechatMuteSavedData data = VoicechatMuteSavedData.get(server);
+        VoicechatMuteSavedData data = VoicechatMuteSavedData.get(source.getServer());
         boolean changed = data.isMuted() != muted;
+
         data.setMuted(muted);
+        VoicechatGlobalMuteManager.setGloballyMuted(muted);
 
         if (!ModList.get().isLoaded(VOICECHAT_MOD_ID)) {
             source.sendSuccess(
@@ -51,7 +45,6 @@ public final class VoicechatMuteControl {
             return Command.SINGLE_SUCCESS;
         }
 
-        updatePlugin(server, muted);
         source.sendSuccess(
                 () -> Component.literal(
                         muted
@@ -65,22 +58,5 @@ public final class VoicechatMuteControl {
                 true
         );
         return Command.SINGLE_SUCCESS;
-    }
-
-    private static void updatePlugin(MinecraftServer server, boolean muted) {
-        if (!ModList.get().isLoaded(VOICECHAT_MOD_ID)) {
-            return;
-        }
-
-        try {
-            Class<?> plugin = Class.forName(PLUGIN_CLASS, true, VoicechatMuteControl.class.getClassLoader());
-            Method setMuted = plugin.getMethod("setGloballyMuted", boolean.class);
-            setMuted.invoke(null, muted);
-        } catch (ReflectiveOperationException | LinkageError exception) {
-            LOGGER.error(
-                    "No se pudo actualizar el silencio global de Simple Voice Chat.",
-                    exception
-            );
-        }
     }
 }

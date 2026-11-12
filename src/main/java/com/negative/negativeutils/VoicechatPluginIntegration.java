@@ -9,12 +9,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Bloquea los paquetes de micrófono en el servidor mientras el mute global está activo.
+ * Registra NegativeUtils como plugin de Forge para Simple Voice Chat.
  */
 @ForgeVoicechatPlugin
 public final class VoicechatPluginIntegration implements VoicechatPlugin {
     private static final Logger LOGGER = LogManager.getLogger();
-    private static volatile boolean globallyMuted;
 
     @Override
     public String getPluginId() {
@@ -23,28 +22,17 @@ public final class VoicechatPluginIntegration implements VoicechatPlugin {
 
     @Override
     public void initialize(VoicechatApi api) {
-        LOGGER.info("Integración de silencio global de NegativeUtils cargada en Simple Voice Chat.");
+        LOGGER.info("Plugin de mute global de NegativeUtils conectado a Simple Voice Chat.");
     }
 
     @Override
     public void registerEvents(EventRegistration registration) {
+        // SVC-Mute usa el mismo evento de la API: MicrophonePacketEvent#cancel().
         registration.registerEvent(
                 MicrophonePacketEvent.class,
-                event -> {
-                    if (globallyMuted) {
-                        event.cancel();
-                    }
-                },
-                1000
+                VoicechatMicrophoneListener::onMicrophonePacket,
+                100
         );
-        LOGGER.info("Evento de bloqueo de micrófono registrado.");
-    }
-
-    public static void setGloballyMuted(boolean muted) {
-        globallyMuted = muted;
-        LOGGER.info(
-                "Silencio global de Simple Voice Chat: {}",
-                muted ? "activado" : "desactivado"
-        );
+        LOGGER.info("Listener de muteall registrado en Simple Voice Chat.");
     }
 }
