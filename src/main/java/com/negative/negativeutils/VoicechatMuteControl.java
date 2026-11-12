@@ -76,8 +76,6 @@ public final class VoicechatMuteControl {
             Class<?> plugin = Class.forName(PLUGIN_CLASS, true, VoicechatMuteControl.class.getClassLoader());
             Method setMuted = plugin.getMethod("setGloballyMuted", boolean.class);
             setMuted.invoke(null, muted);
-            Method refresh = plugin.getMethod("refreshConnections", MinecraftServer.class);
-            refresh.invoke(null, server);
         } catch (ReflectiveOperationException | LinkageError exception) {
             LOGGER.error(
                     "No se pudo actualizar el silencio global de Simple Voice Chat.",

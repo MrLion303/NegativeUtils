@@ -64,7 +64,7 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     // API solo para compilar. Simple Voice Chat sigue siendo opcional en tiempo de ejecución.
-    compileOnly "de.maxhenkel.voicechat:voicechat-api:2.6.0"
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:2.6.24"
 }
 
 tasks.named('processResources', ProcessResources).configure {
