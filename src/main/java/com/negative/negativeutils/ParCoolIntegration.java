@@ -15,9 +15,8 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * Control global de ParCool 1.20.1 mediante su API de Limitations.
- * Se utiliza la limitación global oficial para que también afecte a los jugadores
- * que entren después de ejecutar el comando.
+ * Control global de ParCool 1.20.1 mediante su API oficial de Limitations.
+ * Conserva y restaura la limitación global que ya tuviera configurada el servidor.
  */
 @Mod.EventBusSubscriber(
         modid = NegativeUtilsMod.MOD_ID,
@@ -30,6 +29,11 @@ public final class ParCoolIntegration {
             "com.alrex.parcool.api.unstable.Limitation";
     private static final String ACTION_LIST_CLASS =
             "com.alrex.parcool.common.action.ActionList";
+
+    // Copia temporal de la configuración global original de ParCool.
+    private static Class<?>[] originalActions;
+    private static boolean[] originalPermissions;
+    private static boolean originalGlobalEnabled;
 
     private ParCoolIntegration() {
     }
@@ -65,7 +69,7 @@ public final class ParCoolIntegration {
         source.sendSuccess(
                 () -> Component.literal(
                         enabled
-                                ? "ParCool se ha habilitado globalmente."
+                                ? "ParCool se ha habilitado globalmente y se restauró su configuración anterior."
                                 : "ParCool se ha deshabilitado globalmente: todas sus acciones están bloqueadas."
                 ),
                 true
@@ -85,21 +89,26 @@ public final class ParCoolIntegration {
                     .getMethod("getGlobal", MinecraftServer.class)
                     .invoke(null, server);
 
-            if (enabled) {
-                // Quita únicamente la limitación global de NegativeUtils.
-                limitationType.getMethod("disable").invoke(limitation);
-            } else {
-                Class<?> actionListType = Class.forName(ACTION_LIST_CLASS, true, loader);
-                List<?> actions = (List<?>) actionListType.getField("ACTIONS").get(null);
-                Method permit = limitationType.getMethod("permit", Class.class, boolean.class);
+            Class<?> actionListType = Class.forName(ACTION_LIST_CLASS, true, loader);
+            List<?> actions = (List<?>) actionListType.getField("ACTIONS").get(null);
+            Method permit = limitationType.getMethod("permit", Class.class, boolean.class);
 
+            captureOriginalConfiguration(limitationType, limitation, actions);
+
+            if (enabled) {
+                for (int i = 0; i < originalActions.length; i++) {
+                    permit.invoke(limitation, originalActions[i], originalPermissions[i]);
+                }
+                limitationType.getMethod(originalGlobalEnabled ? "enable" : "disable")
+                        .invoke(limitation);
+            } else {
                 for (Object action : actions) {
                     permit.invoke(limitation, (Class<?>) action, false);
                 }
                 limitationType.getMethod("enable").invoke(limitation);
             }
 
-            // ParCool sincroniza la limitación global con todos los jugadores conectados.
+            // ParCool actualiza y sincroniza a todos los jugadores conectados.
             limitationType.getMethod("apply").invoke(limitation);
             LOGGER.info(
                     "Control global de ParCool aplicado: {}",
@@ -109,6 +118,27 @@ public final class ParCoolIntegration {
         } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
             LOGGER.error("No se pudo aplicar el control global de ParCool.", exception);
             return false;
+        }
+    }
+
+    private static void captureOriginalConfiguration(
+            Class<?> limitationType,
+            Object limitation,
+            List<?> actions
+    ) throws ReflectiveOperationException {
+        if (originalActions != null) {
+            return;
+        }
+
+        Method isPermitted = limitationType.getMethod("isPermitted", Class.class);
+        originalActions = new Class<?>[actions.size()];
+        originalPermissions = new boolean[actions.size()];
+        originalGlobalEnabled = (boolean) limitationType.getMethod("isEnabled").invoke(limitation);
+
+        for (int i = 0; i < actions.size(); i++) {
+            Class<?> action = (Class<?>) actions.get(i);
+            originalActions[i] = action;
+            originalPermissions[i] = (boolean) isPermitted.invoke(limitation, action);
         }
     }
 }
