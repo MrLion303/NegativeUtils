@@ -4,6 +4,8 @@ import com.mojang.brigadier.Command;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -26,6 +28,15 @@ public final class VoicechatMuteControl {
     public static void onServerStarted(ServerStartedEvent event) {
         boolean muted = VoicechatMuteSavedData.get(event.getServer()).isMuted();
         VoicechatGlobalMuteManager.setGloballyMuted(muted);
+        VoicechatMuteStateNetwork.syncAll(muted);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            boolean muted = VoicechatMuteSavedData.get(player.getServer()).isMuted();
+            VoicechatMuteStateNetwork.syncToPlayer(player, muted);
+        }
     }
 
     public static int setMuted(CommandSourceStack source, boolean muted) {
@@ -34,13 +45,14 @@ public final class VoicechatMuteControl {
 
         data.setMuted(muted);
         VoicechatGlobalMuteManager.setGloballyMuted(muted);
+        VoicechatMuteStateNetwork.syncAll(muted);
 
         if (!ModList.get().isLoaded(VOICECHAT_MOD_ID)) {
             source.sendSuccess(
                     () -> Component.literal(
                             "Simple Voice Chat no está instalado en el servidor. El estado se guardó y se aplicará cuando esté instalado."
                     ),
-                    true
+                    false
             );
             return Command.SINGLE_SUCCESS;
         }
@@ -55,7 +67,7 @@ public final class VoicechatMuteControl {
                                 ? "Silencio global desactivado: los jugadores pueden volver a hablar."
                                 : "El silencio global ya estaba desactivado.")
                 ),
-                true
+                false
         );
         return Command.SINGLE_SUCCESS;
     }

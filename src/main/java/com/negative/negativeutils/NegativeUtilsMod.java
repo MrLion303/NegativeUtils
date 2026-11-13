@@ -22,6 +22,7 @@ public final class NegativeUtilsMod {
         ModCreativeModeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         TrailNetwork.register();
+        VoicechatMuteStateNetwork.register();
         TimeDelayNetwork.register();
         WaypointNetwork.register();
         CameraNetwork.register();

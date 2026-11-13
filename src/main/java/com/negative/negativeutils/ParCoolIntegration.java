@@ -54,7 +54,7 @@ public final class ParCoolIntegration {
                     () -> Component.literal(
                             "ParCool no está instalado. El estado se guardó y se aplicará cuando esté instalado."
                     ),
-                    true
+                    false
             );
             return Command.SINGLE_SUCCESS;
         }
@@ -72,7 +72,7 @@ public final class ParCoolIntegration {
                                 ? "ParCool se ha habilitado globalmente y se restauró su configuración anterior."
                                 : "ParCool se ha deshabilitado globalmente: todas sus acciones están bloqueadas."
                 ),
-                true
+                false
         );
         return Command.SINGLE_SUCCESS;
     }
