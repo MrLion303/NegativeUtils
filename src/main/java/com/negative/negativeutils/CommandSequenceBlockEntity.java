@@ -48,7 +48,8 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         if (running || commands.isBlank()) {
             return false;
         }
-        activationPlayerUuid = activatingPlayer == null ? null : activatingPlayer.getUUID();        running = true;
+        activationPlayerUuid = activatingPlayer == null ? null : activatingPlayer.getUUID();
+        running = true;
         lineIndex = 0;
         waitTicks = 0;
         setChanged();
