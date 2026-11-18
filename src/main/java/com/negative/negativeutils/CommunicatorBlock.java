@@ -142,6 +142,10 @@ public final class CommunicatorBlock extends BaseEntityBlock {
                         pos,
                         communicator.getCommands()
                 );
+            } else if (player instanceof ServerPlayer serverPlayer) {
+                // El jugador que pulsó el Comunicador será el objetivo de @w
+                // durante toda la secuencia, incluso después de instrucciones wait.
+                communicator.startSequence(serverPlayer);
             } else {
                 communicator.startSequence();
             }

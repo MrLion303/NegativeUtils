@@ -4,10 +4,13 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
+
+import java.util.UUID;
 
 public class CommandSequenceBlockEntity extends BlockEntity {
     public static final int MAX_COMMANDS_LENGTH = 8192;
@@ -19,6 +22,8 @@ public class CommandSequenceBlockEntity extends BlockEntity {
     private boolean running;
     private int lineIndex;
     private int waitTicks;
+    private UUID activationPlayerUuid;
+    private String activationPlayerName = "";
 
     public CommandSequenceBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlocks.COMMAND_SEQUENCE_BLOCK_ENTITY.get(), pos, state);
@@ -33,9 +38,21 @@ public class CommandSequenceBlockEntity extends BlockEntity {
     }
 
     public boolean startSequence() {
+        return startSequence(null);
+    }
+
+    /**
+     * Inicia la secuencia y conserva al jugador que activó el Comunicador.
+     * La identidad se mantiene durante todos los wait y se guarda en el bloque.
+     */
+    public boolean startSequence(ServerPlayer activatingPlayer) {
         if (running || commands.isBlank()) {
             return false;
         }
+        activationPlayerUuid = activatingPlayer == null ? null : activatingPlayer.getUUID();
+        activationPlayerName = activatingPlayer == null
+                ? ""
+                : activatingPlayer.getGameProfile().getName();
         running = true;
         lineIndex = 0;
         waitTicks = 0;
@@ -79,6 +96,8 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         running = false;
         lineIndex = 0;
         waitTicks = 0;
+        activationPlayerUuid = null;
+        activationPlayerName = "";
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(
@@ -117,10 +136,20 @@ public class CommandSequenceBlockEntity extends BlockEntity {
                 continue;
             }
 
+            String initiatorName = activationPlayerName;
+            if (activationPlayerUuid != null) {
+                ServerPlayer onlinePlayer = serverLevel.getServer()
+                        .getPlayerList()
+                        .getPlayer(activationPlayerUuid);
+                if (onlinePlayer != null) {
+                    initiatorName = onlinePlayer.getGameProfile().getName();
+                }
+            }
+
             BlockCommandRunner.execute(
                     serverLevel,
                     worldPosition,
-                    null,
+                    initiatorName,
                     line,
                     currentLine
             );
@@ -129,6 +158,8 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         running = false;
         lineIndex = 0;
         waitTicks = 0;
+        activationPlayerUuid = null;
+        activationPlayerName = "";
         setChanged();
     }
 
@@ -179,6 +210,12 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         tag.putBoolean("Running", running);
         tag.putInt("LineIndex", lineIndex);
         tag.putInt("WaitTicks", waitTicks);
+        if (activationPlayerUuid != null) {
+            tag.putUUID("ActivationPlayer", activationPlayerUuid);
+        }
+        if (!activationPlayerName.isBlank()) {
+            tag.putString("ActivationPlayerName", activationPlayerName);
+        }
     }
 
     @Override
@@ -189,6 +226,10 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         running = tag.getBoolean("Running");
         lineIndex = Math.max(0, tag.getInt("LineIndex"));
         waitTicks = Math.max(0, tag.getInt("WaitTicks"));
+        activationPlayerUuid = tag.hasUUID("ActivationPlayer")
+                ? tag.getUUID("ActivationPlayer")
+                : null;
+        activationPlayerName = tag.getString("ActivationPlayerName");
     }
 
     @Override

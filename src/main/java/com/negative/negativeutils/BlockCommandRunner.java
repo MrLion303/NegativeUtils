@@ -117,6 +117,81 @@ final class BlockCommandRunner {
         }
     }
 
+
+    /**
+     * @w is intentionally scoped to sequences started through the Comunicador.
+     * Resolve it to a name-filtered vanilla selector so it remains tied to the
+     * original player even inside nested execute commands and after wait delays.
+     * Quoted strings are left untouched, so literal text such as "@w" is safe.
+     */
+    private static String resolveCommunicatorSelector(String command, String initiatorName) {
+        StringBuilder resolved = new StringBuilder(command.length() + 24);
+        boolean insideQuotes = false;
+
+        for (int i = 0; i < command.length();) {
+            char current = command.charAt(i);
+
+            if (current == '\\\\' && insideQuotes && i + 1 < command.length()) {
+                resolved.append(current).append(command.charAt(i + 1));
+                i += 2;
+                continue;
+            }
+
+            if (current == '"') {
+                insideQuotes = !insideQuotes;
+                resolved.append(current);
+                i++;
+                continue;
+            }
+
+            if (!insideQuotes
+                    && current == '@'
+                    && i + 1 < command.length()
+                    && command.charAt(i + 1) == 'w'
+                    && isSelectorStart(command, i)
+                    && isSelectorEnd(command, i + 2)) {
+                if (initiatorName == null || !initiatorName.matches("[A-Za-z0-9_]{1,16}")) {
+                    return null;
+                }
+
+                resolved.append("@a[name=").append(initiatorName);
+                i += 2;
+
+                if (i < command.length() && command.charAt(i) == '[') {
+                    i++;
+                    if (i < command.length() && command.charAt(i) == ']') {
+                        resolved.append(']');
+                        i++;
+                    } else {
+                        resolved.append(',');
+                    }
+                } else {
+                    resolved.append(']');
+                }
+                continue;
+            }
+
+            resolved.append(current);
+            i++;
+        }
+
+        return resolved.toString();
+    }
+
+    private static boolean isSelectorStart(String command, int index) {
+        if (index == 0) {
+            return true;
+        }
+        char previous = command.charAt(index - 1);
+        return Character.isWhitespace(previous) || previous == '(' || previous == ',';
+    }
+
+    private static boolean isSelectorEnd(String command, int index) {
+        return index >= command.length()
+                || command.charAt(index) == '['
+                || Character.isWhitespace(command.charAt(index));
+    }
+
     static String translateNaturalEffect(String line, String target) {
         Matcher natural = NATURAL_EFFECT.matcher(line.trim());
         if (!natural.matches()) {
