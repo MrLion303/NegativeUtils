@@ -23,7 +23,6 @@ public class CommandSequenceBlockEntity extends BlockEntity {
     private int lineIndex;
     private int waitTicks;
     private UUID activationPlayerUuid;
-    private String activationPlayerName = "";
 
     public CommandSequenceBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlocks.COMMAND_SEQUENCE_BLOCK_ENTITY.get(), pos, state);
@@ -49,11 +48,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         if (running || commands.isBlank()) {
             return false;
         }
-        activationPlayerUuid = activatingPlayer == null ? null : activatingPlayer.getUUID();
-        activationPlayerName = activatingPlayer == null
-                ? ""
-                : activatingPlayer.getGameProfile().getName();
-        running = true;
+        activationPlayerUuid = activatingPlayer == null ? null : activatingPlayer.getUUID();        running = true;
         lineIndex = 0;
         waitTicks = 0;
         setChanged();
@@ -97,7 +92,6 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         lineIndex = 0;
         waitTicks = 0;
         activationPlayerUuid = null;
-        activationPlayerName = "";
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(
@@ -136,7 +130,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
                 continue;
             }
 
-            String initiatorName = activationPlayerName;
+            String initiatorName = "";
             if (activationPlayerUuid != null) {
                 ServerPlayer onlinePlayer = serverLevel.getServer()
                         .getPlayerList()
@@ -159,7 +153,6 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         lineIndex = 0;
         waitTicks = 0;
         activationPlayerUuid = null;
-        activationPlayerName = "";
         setChanged();
     }
 
@@ -213,9 +206,6 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         if (activationPlayerUuid != null) {
             tag.putUUID("ActivationPlayer", activationPlayerUuid);
         }
-        if (!activationPlayerName.isBlank()) {
-            tag.putString("ActivationPlayerName", activationPlayerName);
-        }
     }
 
     @Override
@@ -229,7 +219,6 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         activationPlayerUuid = tag.hasUUID("ActivationPlayer")
                 ? tag.getUUID("ActivationPlayer")
                 : null;
-        activationPlayerName = tag.getString("ActivationPlayerName");
     }
 
     @Override
