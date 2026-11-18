@@ -117,7 +117,6 @@ final class BlockCommandRunner {
             return;
         }
 
-        command = normalize(command);
         command = resolveCommunicatorSelector(command, initiatorName);
         if (command == null) {
             LOGGER.warn(
@@ -128,6 +127,7 @@ final class BlockCommandRunner {
             return;
         }
 
+        command = normalize(command);
         var source = level.getServer()
                 .createCommandSourceStack()
                 .withLevel(level)
