@@ -84,12 +84,50 @@ final class BlockCommandRunner {
             String line,
             int lineNumber
     ) {
+        execute(
+                level,
+                blockPos,
+                player,
+                player == null ? "" : player.getGameProfile().getName(),
+                line,
+                lineNumber
+        );
+    }
+
+    static void execute(
+            ServerLevel level,
+            BlockPos blockPos,
+            String initiatorName,
+            String line,
+            int lineNumber
+    ) {
+        execute(level, blockPos, null, initiatorName, line, lineNumber);
+    }
+
+    private static void execute(
+            ServerLevel level,
+            BlockPos blockPos,
+            ServerPlayer player,
+            String initiatorName,
+            String line,
+            int lineNumber
+    ) {
         String command = line.startsWith("/") ? line.substring(1).trim() : line;
         if (command.isEmpty()) {
             return;
         }
 
         command = normalize(command);
+        command = resolveCommunicatorSelector(command, initiatorName);
+        if (command == null) {
+            LOGGER.warn(
+                    "Cannot resolve @w at command block {} line {}: no activating player was recorded.",
+                    blockPos,
+                    lineNumber + 1
+            );
+            return;
+        }
+
         var source = level.getServer()
                 .createCommandSourceStack()
                 .withLevel(level)
@@ -116,7 +154,6 @@ final class BlockCommandRunner {
             );
         }
     }
-
 
     /**
      * @w is intentionally scoped to sequences started through the Comunicador.
