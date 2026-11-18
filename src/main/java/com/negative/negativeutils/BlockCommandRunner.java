@@ -168,7 +168,7 @@ final class BlockCommandRunner {
         for (int i = 0; i < command.length();) {
             char current = command.charAt(i);
 
-            if (current == '\\\\' && insideQuotes && i + 1 < command.length()) {
+            if (current == '\\' && insideQuotes && i + 1 < command.length()) {
                 resolved.append(current).append(command.charAt(i + 1));
                 i += 2;
                 continue;
