@@ -481,11 +481,26 @@ public class CommandSequenceScreen extends Screen {
             }
             String line = activeEditor.getValue();
             int cursor = activeEditor.getCursorPosition();
-            int highlight = activeEditor.getHighlightPos();
+            String highlighted = activeEditor.getHighlighted();
+            int selectionLength = highlighted.length();
             startLine = activeLineIndex;
             endLine = activeLineIndex;
-            startColumn = Math.min(cursor, highlight);
-            endColumn = Math.max(cursor, highlight);
+
+            if (selectionLength > 0
+                    && cursor >= selectionLength
+                    && line.regionMatches(cursor - selectionLength, highlighted, 0, selectionLength)) {
+                startColumn = cursor - selectionLength;
+                endColumn = cursor;
+            } else if (selectionLength > 0
+                    && cursor + selectionLength <= line.length()
+                    && line.regionMatches(cursor, highlighted, 0, selectionLength)) {
+                startColumn = cursor;
+                endColumn = cursor + selectionLength;
+            } else {
+                startColumn = cursor;
+                endColumn = cursor;
+            }
+
             before = line.substring(0, startColumn);
             after = line.substring(endColumn);
         }
