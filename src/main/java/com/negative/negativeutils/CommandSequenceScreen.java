@@ -437,7 +437,7 @@ public class CommandSequenceScreen extends Screen {
 
         lines.clear();
         cursorPositions.clear();
-        for (String line : normalized.split("\\n", -1)) {
+        for (String line : normalized.split("\n", -1)) {
             lines.add(line);
             cursorPositions.add(line.length());
         }
@@ -490,7 +490,7 @@ public class CommandSequenceScreen extends Screen {
             after = line.substring(endColumn);
         }
 
-        String[] insertedLines = inserted.split("\\n", -1);
+        String[] insertedLines = inserted.split("\n", -1);
         List<String> replacement = new ArrayList<>();
         replacement.addAll(lines.subList(0, startLine));
         replacement.add(before + insertedLines[0]);
@@ -505,7 +505,7 @@ public class CommandSequenceScreen extends Screen {
         }
         replacement.addAll(lines.subList(endLine + 1, lines.size()));
 
-        String updated = String.join("\\n", replacement);
+        String updated = String.join("\n", replacement);
         if (updated.length() > CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH) {
             importStatus = "La secuencia supera el límite de "
                     + CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH + " caracteres.";
@@ -602,19 +602,16 @@ public class CommandSequenceScreen extends Screen {
         if (hasControlDown() && keyCode == GLFW.GLFW_KEY_A) {
             selectAll = true;
             importStatus = "Todo el contenido está seleccionado.";
-            if (activeEditor != null) {
-                setFocused(activeEditor);
-            }
             return true;
         }
 
         if (hasControlDown() && keyCode == GLFW.GLFW_KEY_C && selectAll) {
-            this.minecraft.keyboardHandler.setClipboard(String.join("\\n", lines));
+            this.minecraft.keyboardHandler.setClipboard(String.join("\n", lines));
             return true;
         }
 
         if (hasControlDown() && keyCode == GLFW.GLFW_KEY_X && selectAll) {
-            this.minecraft.keyboardHandler.setClipboard(String.join("\\n", lines));
+            this.minecraft.keyboardHandler.setClipboard(String.join("\n", lines));
             clearSelectedAll();
             return true;
         }
@@ -631,7 +628,7 @@ public class CommandSequenceScreen extends Screen {
         }
 
         if (selectAll && keyCode == GLFW.GLFW_KEY_ENTER) {
-            pasteTextAtCursor("\\n");
+            pasteTextAtCursor("\n");
             return true;
         }
 
