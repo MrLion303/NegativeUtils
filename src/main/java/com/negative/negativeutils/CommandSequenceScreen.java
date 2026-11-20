@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -36,6 +42,8 @@ public class CommandSequenceScreen extends Screen {
     private int activeLineIndex = -1;
 
     private boolean suppressLineChanged;
+    private boolean selectAll;
+    private String importStatus = "";
     private String lastSuggestionValue;
     private int lastSuggestionCursor = -1;
 
@@ -96,12 +104,21 @@ public class CommandSequenceScreen extends Screen {
             visibleEditors.add(this.addRenderableWidget(input));
         }
 
+        int buttonsStart = this.width / 2 - 148;
         this.addRenderableWidget(
                 Button.builder(
                                 Component.literal("Guardar"),
                                 button -> saveCommands()
                         )
-                        .bounds(this.width / 2 - 105, this.height - 48, 100, 20)
+                        .bounds(buttonsStart, this.height - 48, 80, 20)
+                        .build()
+        );
+        this.addRenderableWidget(
+                Button.builder(
+                                Component.literal("Importar .txt"),
+                                button -> importTextFile()
+                        )
+                        .bounds(buttonsStart + 88, this.height - 48, 120, 20)
                         .build()
         );
         this.addRenderableWidget(
@@ -109,7 +126,7 @@ public class CommandSequenceScreen extends Screen {
                                 Component.literal("Cancelar"),
                                 button -> this.onClose()
                         )
-                        .bounds(this.width / 2 + 5, this.height - 48, 100, 20)
+                        .bounds(buttonsStart + 216, this.height - 48, 80, 20)
                         .build()
         );
 
@@ -225,6 +242,8 @@ public class CommandSequenceScreen extends Screen {
     }
 
     private void onEditorFocused(CommandLineEditBox editor) {
+        selectAll = false;
+        importStatus = "";
         int lineIndex = editor.getLineIndex();
         if (lineIndex < 0 || lineIndex >= lines.size()) {
             return;
@@ -407,6 +426,150 @@ public class CommandSequenceScreen extends Screen {
         currentCommands = String.join("\n", lines);
     }
 
+
+    private void replaceAllText(String text) {
+        String normalized = normalize(text);
+        if (normalized.length() > CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH) {
+            importStatus = "El texto supera el límite de "
+                    + CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH + " caracteres.";
+            return;
+        }
+
+        lines.clear();
+        cursorPositions.clear();
+        for (String line : normalized.split("\\n", -1)) {
+            lines.add(line);
+            cursorPositions.add(line.length());
+        }
+        if (lines.isEmpty()) {
+            lines.add("");
+            cursorPositions.add(0);
+        }
+
+        currentCommands = normalized;
+        selectAll = false;
+        firstVisibleLine = Math.max(0, lines.size() - Math.max(1, visibleEditors.size()));
+        int targetLine = lines.size() - 1;
+        bindVisibleEditors(targetLine, lines.get(targetLine).length(), true);
+        importStatus = "";
+    }
+
+    private void pasteTextAtCursor(String clipboardText) {
+        String inserted = normalize(clipboardText);
+        if (inserted.isEmpty() && !selectAll
+                && (activeEditor == null || activeEditor.getHighlighted().isEmpty())) {
+            return;
+        }
+
+        int startLine;
+        int startColumn;
+        int endLine;
+        int endColumn;
+        String before;
+        String after;
+
+        if (selectAll) {
+            startLine = 0;
+            startColumn = 0;
+            endLine = lines.size() - 1;
+            endColumn = lines.get(endLine).length();
+            before = "";
+            after = "";
+        } else {
+            if (activeEditor == null || activeLineIndex < 0 || activeLineIndex >= lines.size()) {
+                return;
+            }
+            String line = activeEditor.getValue();
+            int cursor = activeEditor.getCursorPosition();
+            int highlight = activeEditor.getHighlightPos();
+            startLine = activeLineIndex;
+            endLine = activeLineIndex;
+            startColumn = Math.min(cursor, highlight);
+            endColumn = Math.max(cursor, highlight);
+            before = line.substring(0, startColumn);
+            after = line.substring(endColumn);
+        }
+
+        String[] insertedLines = inserted.split("\\n", -1);
+        List<String> replacement = new ArrayList<>();
+        replacement.addAll(lines.subList(0, startLine));
+        replacement.add(before + insertedLines[0]);
+        for (int i = 1; i < insertedLines.length - 1; i++) {
+            replacement.add(insertedLines[i]);
+        }
+        if (insertedLines.length > 1) {
+            replacement.add(insertedLines[insertedLines.length - 1] + after);
+        } else {
+            replacement.set(replacement.size() - 1,
+                    replacement.get(replacement.size() - 1) + after);
+        }
+        replacement.addAll(lines.subList(endLine + 1, lines.size()));
+
+        String updated = String.join("\\n", replacement);
+        if (updated.length() > CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH) {
+            importStatus = "La secuencia supera el límite de "
+                    + CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH + " caracteres.";
+            return;
+        }
+
+        int nextLine = startLine + insertedLines.length - 1;
+        int nextColumn = insertedLines.length == 1
+                ? before.length() + insertedLines[0].length()
+                : insertedLines[insertedLines.length - 1].length();
+
+        lines.clear();
+        lines.addAll(replacement);
+        cursorPositions.clear();
+        for (String line : lines) {
+            cursorPositions.add(line.length());
+        }
+        currentCommands = updated;
+        selectAll = false;
+        importStatus = "";
+        bindVisibleEditors(nextLine, nextColumn, true);
+    }
+
+    private void importTextFile() {
+        FileDialog dialog = new FileDialog((Frame) null, "Importar secuencia .txt", FileDialog.LOAD);
+        dialog.setFilenameFilter((directory, name) ->
+                name != null && name.toLowerCase(Locale.ROOT).endsWith(".txt"));
+        dialog.setFile("*.txt");
+        dialog.setVisible(true);
+
+        String selectedFile = dialog.getFile();
+        String directory = dialog.getDirectory();
+        dialog.dispose();
+        if (selectedFile == null || directory == null) {
+            return;
+        }
+
+        File file = new File(directory, selectedFile);
+        if (!file.isFile() || !selectedFile.toLowerCase(Locale.ROOT).endsWith(".txt")) {
+            importStatus = "Selecciona un archivo .txt válido.";
+            return;
+        }
+
+        try {
+            String contents = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+            if (contents.length() > CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH) {
+                importStatus = "El archivo supera el límite de "
+                        + CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH + " caracteres.";
+                return;
+            }
+            replaceAllText(contents);
+            importStatus = "Archivo importado: " + selectedFile;
+        } catch (IOException exception) {
+            importStatus = "No se pudo leer el archivo: " + exception.getMessage();
+        } catch (SecurityException exception) {
+            importStatus = "No hay permiso para leer ese archivo.";
+        }
+    }
+
+    private void clearSelectedAll() {
+        replaceAllText("");
+        selectAll = false;
+    }
+
     private void saveCommands() {
         currentCommands = String.join("\n", lines);
         if (communicator) {
@@ -433,6 +596,42 @@ public class CommandSequenceScreen extends Screen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_ENTER && hasControlDown()) {
             saveCommands();
+            return true;
+        }
+
+        if (hasControlDown() && keyCode == GLFW.GLFW_KEY_A) {
+            selectAll = true;
+            importStatus = "Todo el contenido está seleccionado.";
+            if (activeEditor != null) {
+                setFocused(activeEditor);
+            }
+            return true;
+        }
+
+        if (hasControlDown() && keyCode == GLFW.GLFW_KEY_C && selectAll) {
+            this.minecraft.keyboardHandler.setClipboard(String.join("\\n", lines));
+            return true;
+        }
+
+        if (hasControlDown() && keyCode == GLFW.GLFW_KEY_X && selectAll) {
+            this.minecraft.keyboardHandler.setClipboard(String.join("\\n", lines));
+            clearSelectedAll();
+            return true;
+        }
+
+        if (hasControlDown() && keyCode == GLFW.GLFW_KEY_V) {
+            pasteTextAtCursor(this.minecraft.keyboardHandler.getClipboard());
+            return true;
+        }
+
+        if (selectAll && (keyCode == GLFW.GLFW_KEY_BACKSPACE
+                || keyCode == GLFW.GLFW_KEY_DELETE)) {
+            clearSelectedAll();
+            return true;
+        }
+
+        if (selectAll && keyCode == GLFW.GLFW_KEY_ENTER) {
+            pasteTextAtCursor("\\n");
             return true;
         }
 
@@ -473,7 +672,22 @@ public class CommandSequenceScreen extends Screen {
             }
         }
 
+        if (selectAll && (keyCode == GLFW.GLFW_KEY_LEFT || keyCode == GLFW.GLFW_KEY_RIGHT
+                || keyCode == GLFW.GLFW_KEY_HOME || keyCode == GLFW.GLFW_KEY_END)) {
+            selectAll = false;
+            importStatus = "";
+        }
+
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        if (selectAll && !Character.isISOControl(codePoint)) {
+            pasteTextAtCursor(String.valueOf(codePoint));
+            return true;
+        }
+        return super.charTyped(codePoint, modifiers);
     }
 
     @Override
@@ -594,7 +808,15 @@ public class CommandSequenceScreen extends Screen {
             }
 
             int y = editorY + row * LINE_HEIGHT + 2;
-            if (lineIndex == activeLineIndex) {
+            if (selectAll) {
+                graphics.fill(
+                        editorX + GUTTER_WIDTH,
+                        editorY + row * LINE_HEIGHT,
+                        editorX + editorWidth,
+                        editorY + (row + 1) * LINE_HEIGHT,
+                        0xFF264F78
+                );
+            } else if (lineIndex == activeLineIndex) {
                 graphics.fill(
                         editorX + GUTTER_WIDTH,
                         editorY + row * LINE_HEIGHT,
@@ -609,6 +831,17 @@ public class CommandSequenceScreen extends Screen {
                     editorX + 8,
                     y,
                     0xFF718096,
+                    false
+            );
+        }
+
+        if (!importStatus.isEmpty()) {
+            graphics.drawString(
+                    this.font,
+                    importStatus,
+                    editorX,
+                    editorY + editorHeight + 5,
+                    0xFFFFCC66,
                     false
             );
         }
