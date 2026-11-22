@@ -96,7 +96,7 @@ public final class TextFilePickerScreen extends Screen {
         return name != null && name.toString().toLowerCase(Locale.ROOT).endsWith(".txt");
     }
 
-    private void rebuildWidgets() {
+    private void refreshFileButtons() {
         clearWidgets();
 
         int left = panelLeft() + 12;
@@ -138,7 +138,7 @@ public final class TextFilePickerScreen extends Screen {
             currentDirectory = entry.toAbsolutePath().normalize();
             scroll = 0;
             loadEntries();
-            rebuildWidgets();
+            refreshFileButtons();
             return;
         }
 
@@ -159,7 +159,7 @@ public final class TextFilePickerScreen extends Screen {
         currentDirectory = currentDirectory.getParent();
         scroll = 0;
         loadEntries();
-        rebuildWidgets();
+        refreshFileButtons();
     }
 
     private void returnToEditor() {
@@ -189,7 +189,7 @@ public final class TextFilePickerScreen extends Screen {
             int nextScroll = Math.max(0, Math.min(maxScroll, scroll + movement));
             if (nextScroll != scroll) {
                 scroll = nextScroll;
-                rebuildWidgets();
+                refreshFileButtons();
             }
             return true;
         }
