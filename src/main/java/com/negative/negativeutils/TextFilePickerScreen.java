@@ -47,7 +47,7 @@ public final class TextFilePickerScreen extends Screen {
 
         currentDirectory = home;
         loadEntries();
-        rebuildWidgets();
+        refreshFileButtons();
     }
 
     private int panelWidth() {
