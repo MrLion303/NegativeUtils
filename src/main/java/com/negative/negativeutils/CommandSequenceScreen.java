@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -545,34 +543,35 @@ public class CommandSequenceScreen extends Screen {
     }
 
     private void importTextFile() {
-        FileDialog dialog = new FileDialog((Frame) null, "Importar secuencia .txt", FileDialog.LOAD);
-        dialog.setFilenameFilter((directory, name) ->
-                name != null && name.toLowerCase(Locale.ROOT).endsWith(".txt"));
-        dialog.setFile("*.txt");
-        dialog.setVisible(true);
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new TextFilePickerScreen(this));
+        }
+    }
 
-        String selectedFile = dialog.getFile();
-        String directory = dialog.getDirectory();
-        dialog.dispose();
-        if (selectedFile == null || directory == null) {
+    void loadImportedTextFile(Path file) {
+        if (file == null) {
             return;
         }
 
-        File file = new File(directory, selectedFile);
-        if (!file.isFile() || !selectedFile.toLowerCase(Locale.ROOT).endsWith(".txt")) {
+        String fileName = file.getFileName() == null ? file.toString() : file.getFileName().toString();
+        if (!fileName.toLowerCase(Locale.ROOT).endsWith(".txt") || !Files.isRegularFile(file)) {
             importStatus = "Selecciona un archivo .txt válido.";
             return;
         }
 
         try {
-            String contents = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+            if (Files.size(file) > CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH * 4L) {
+                importStatus = "El archivo supera el tamaño permitido.";
+                return;
+            }
+            String contents = Files.readString(file, StandardCharsets.UTF_8);
             if (contents.length() > CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH) {
                 importStatus = "El archivo supera el límite de "
                         + CommandSequenceBlockEntity.MAX_COMMANDS_LENGTH + " caracteres.";
                 return;
             }
             replaceAllText(contents);
-            importStatus = "Archivo importado: " + selectedFile;
+            importStatus = "Archivo importado: " + fileName;
         } catch (IOException exception) {
             importStatus = "No se pudo leer el archivo: " + exception.getMessage();
         } catch (SecurityException exception) {
