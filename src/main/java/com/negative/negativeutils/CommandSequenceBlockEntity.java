@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -138,7 +139,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
                 initiatorUuid = null;
             }
 
-            BlockCommandRunner.execute(
+            BlockCommandRunner.executeForInitiator(
                     serverLevel,
                     worldPosition,
                     initiatorUuid,
