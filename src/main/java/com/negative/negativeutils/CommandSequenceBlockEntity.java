@@ -4,7 +4,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -131,20 +130,18 @@ public class CommandSequenceBlockEntity extends BlockEntity {
                 continue;
             }
 
-            String initiatorName = "";
-            if (activationPlayerUuid != null) {
-                ServerPlayer onlinePlayer = serverLevel.getServer()
-                        .getPlayerList()
-                        .getPlayer(activationPlayerUuid);
-                if (onlinePlayer != null) {
-                    initiatorName = onlinePlayer.getGameProfile().getName();
-                }
+            UUID initiatorUuid = activationPlayerUuid;
+            if (initiatorUuid != null
+                    && serverLevel.getServer()
+                    .getPlayerList()
+                    .getPlayer(initiatorUuid) == null) {
+                initiatorUuid = null;
             }
 
             BlockCommandRunner.execute(
                     serverLevel,
                     worldPosition,
-                    initiatorName,
+                    initiatorUuid,
                     line,
                     currentLine
             );
