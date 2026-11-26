@@ -3,6 +3,8 @@ package com.negative.negativeutils;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
@@ -10,6 +12,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 
 public class CommandSequenceBlockEntity extends BlockEntity {
@@ -19,10 +24,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
 
     private String commands = "";
     private boolean inputWasPowered;
-    private boolean running;
-    private int lineIndex;
-    private int waitTicks;
-    private UUID activationPlayerUuid;
+    private final List<SequenceExecution> executions = new ArrayList<>();
 
     public CommandSequenceBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlocks.COMMAND_SEQUENCE_BLOCK_ENTITY.get(), pos, state);
@@ -36,29 +38,81 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         super(type, pos, state);
     }
 
+    /**
+     * Inicia una ejecución sin jugador asociado (por ejemplo, mediante redstone).
+     * Solo se permite una ejecución de este tipo a la vez.
+     */
     public boolean startSequence() {
-        return startSequence(null);
+        return startSequenceInternal(null);
     }
 
     /**
-     * Inicia la secuencia y conserva al jugador que activó el Comunicador.
-     * La identidad se mantiene durante todos los wait y se guarda en el bloque.
+     * Inicia una ejecución independiente para el jugador que activó el Comunicador.
+     * Un jugador no puede duplicar su propia ejecución mientras siga activa,
+     * pero otros jugadores pueden iniciar la misma secuencia simultáneamente.
      */
     public boolean startSequence(ServerPlayer activatingPlayer) {
-        if (running || commands.isBlank()) {
+        return startSequenceInternal(
+                activatingPlayer == null ? null : activatingPlayer.getUUID()
+        );
+    }
+
+    private boolean startSequenceInternal(UUID activatingPlayerUuid) {
+        if (commands.isBlank()) {
             return false;
         }
-        activationPlayerUuid = activatingPlayer == null ? null : activatingPlayer.getUUID();
-        running = true;
-        lineIndex = 0;
-        waitTicks = 0;
+
+        for (SequenceExecution execution : executions) {
+            if (activatingPlayerUuid == null
+                    ? execution.activatingPlayerUuid == null
+                    : activatingPlayerUuid.equals(execution.activatingPlayerUuid)) {
+                return false;
+            }
+        }
+
+        executions.add(new SequenceExecution(activatingPlayerUuid));
         setChanged();
         return true;
     }
 
     public void tickSequence(ServerLevel serverLevel) {
-        if (running) {
-            runUntilWait(serverLevel);
+        if (executions.isEmpty()) {
+            return;
+        }
+
+        boolean changed = false;
+        Iterator<SequenceExecution> iterator = executions.iterator();
+        while (iterator.hasNext()) {
+            SequenceExecution execution = iterator.next();
+
+            // Cada ejecución pertenece a su activador. Si se desconecta,
+            // se cancela solamente su secuencia, sin afectar a los demás.
+            if (execution.activatingPlayerUuid != null
+                    && serverLevel.getServer()
+                    .getPlayerList()
+                    .getPlayer(execution.activatingPlayerUuid) == null) {
+                iterator.remove();
+                changed = true;
+                continue;
+            }
+
+            if (execution.waitTicks > 0) {
+                execution.waitTicks--;
+                if (execution.waitTicks > 0) {
+                    continue;
+                }
+            }
+
+            if (!runUntilWait(serverLevel, execution)) {
+                iterator.remove();
+                changed = true;
+            } else {
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setChanged();
         }
     }
 
@@ -89,10 +143,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
 
     public void setCommands(String commands) {
         this.commands = sanitize(commands);
-        running = false;
-        lineIndex = 0;
-        waitTicks = 0;
-        activationPlayerUuid = null;
+        executions.clear();
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(
@@ -104,17 +155,17 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         }
     }
 
-    private void runUntilWait(ServerLevel serverLevel) {
-        if (waitTicks > 0) {
-            waitTicks--;
-            if (waitTicks > 0) {
-                return;
-            }
-        }
-
+    /**
+     * Ejecuta las líneas de una instancia hasta completar la secuencia
+     * o encontrar una espera. Devuelve true mientras la instancia siga activa.
+     */
+    private boolean runUntilWait(
+            ServerLevel serverLevel,
+            SequenceExecution execution
+    ) {
         String[] lines = commands.split("\\n", -1);
-        while (lineIndex < lines.length) {
-            int currentLine = lineIndex++;
+        while (execution.lineIndex < lines.length) {
+            int currentLine = execution.lineIndex++;
             String line = lines[currentLine].trim();
             if (line.isEmpty()) {
                 continue;
@@ -123,36 +174,23 @@ public class CommandSequenceBlockEntity extends BlockEntity {
             if (line.regionMatches(true, 0, "wait", 0, 4)
                     && (line.length() == 4
                     || Character.isWhitespace(line.charAt(4)))) {
-                waitTicks = parseWaitTicks(line, currentLine);
-                if (waitTicks > 0) {
-                    setChanged();
-                    return;
+                execution.waitTicks = parseWaitTicks(line, currentLine);
+                if (execution.waitTicks > 0) {
+                    return true;
                 }
                 continue;
-            }
-
-            UUID initiatorUuid = activationPlayerUuid;
-            if (initiatorUuid != null
-                    && serverLevel.getServer()
-                    .getPlayerList()
-                    .getPlayer(initiatorUuid) == null) {
-                initiatorUuid = null;
             }
 
             BlockCommandRunner.executeForInitiator(
                     serverLevel,
                     worldPosition,
-                    initiatorUuid,
+                    execution.activatingPlayerUuid,
                     line,
                     currentLine
             );
         }
 
-        running = false;
-        lineIndex = 0;
-        waitTicks = 0;
-        activationPlayerUuid = null;
-        setChanged();
+        return false;
     }
 
     private int parseWaitTicks(String line, int lineNumber) {
@@ -188,7 +226,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         if (commands == null) {
             return "";
         }
-        String normalized = commands.replace("\r\n", "\n").replace('\r', '\n');
+        String normalized = commands.replace("\\r\\n", "\\n").replace('\\r', '\\n');
         return normalized.length() > MAX_COMMANDS_LENGTH
                 ? normalized.substring(0, MAX_COMMANDS_LENGTH)
                 : normalized;
@@ -199,12 +237,18 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         super.saveAdditional(tag);
         tag.putString("Commands", commands);
         tag.putBoolean("InputWasPowered", inputWasPowered);
-        tag.putBoolean("Running", running);
-        tag.putInt("LineIndex", lineIndex);
-        tag.putInt("WaitTicks", waitTicks);
-        if (activationPlayerUuid != null) {
-            tag.putUUID("ActivationPlayer", activationPlayerUuid);
+
+        ListTag savedExecutions = new ListTag();
+        for (SequenceExecution execution : executions) {
+            CompoundTag savedExecution = new CompoundTag();
+            if (execution.activatingPlayerUuid != null) {
+                savedExecution.putUUID("ActivationPlayer", execution.activatingPlayerUuid);
+            }
+            savedExecution.putInt("LineIndex", execution.lineIndex);
+            savedExecution.putInt("WaitTicks", execution.waitTicks);
+            savedExecutions.add(savedExecution);
         }
+        tag.put("Executions", savedExecutions);
     }
 
     @Override
@@ -212,12 +256,35 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         super.load(tag);
         commands = sanitize(tag.getString("Commands"));
         inputWasPowered = tag.getBoolean("InputWasPowered");
-        running = tag.getBoolean("Running");
-        lineIndex = Math.max(0, tag.getInt("LineIndex"));
-        waitTicks = Math.max(0, tag.getInt("WaitTicks"));
-        activationPlayerUuid = tag.hasUUID("ActivationPlayer")
-                ? tag.getUUID("ActivationPlayer")
-                : null;
+        executions.clear();
+
+        if (tag.contains("Executions", Tag.TAG_LIST)) {
+            ListTag savedExecutions = tag.getList("Executions", Tag.TAG_COMPOUND);
+            for (int i = 0; i < savedExecutions.size(); i++) {
+                CompoundTag savedExecution = savedExecutions.getCompound(i);
+                UUID activatingPlayerUuid = savedExecution.hasUUID("ActivationPlayer")
+                        ? savedExecution.getUUID("ActivationPlayer")
+                        : null;
+                int savedLineIndex = Math.max(0, savedExecution.getInt("LineIndex"));
+                int savedWaitTicks = Math.max(0, savedExecution.getInt("WaitTicks"));
+                executions.add(new SequenceExecution(
+                        activatingPlayerUuid,
+                        savedLineIndex,
+                        savedWaitTicks
+                ));
+            }
+        } else if (tag.getBoolean("Running")) {
+            // Compatibilidad con mundos guardados por la versión anterior,
+            // que solamente podía conservar una ejecución a la vez.
+            UUID activatingPlayerUuid = tag.hasUUID("ActivationPlayer")
+                    ? tag.getUUID("ActivationPlayer")
+                    : null;
+            executions.add(new SequenceExecution(
+                    activatingPlayerUuid,
+                    Math.max(0, tag.getInt("LineIndex")),
+                    Math.max(0, tag.getInt("WaitTicks"))
+            ));
+        }
     }
 
     @Override
@@ -230,5 +297,25 @@ public class CommandSequenceBlockEntity extends BlockEntity {
     @Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
+    }
+
+    private static final class SequenceExecution {
+        private final UUID activatingPlayerUuid;
+        private int lineIndex;
+        private int waitTicks;
+
+        private SequenceExecution(UUID activatingPlayerUuid) {
+            this(activatingPlayerUuid, 0, 0);
+        }
+
+        private SequenceExecution(
+                UUID activatingPlayerUuid,
+                int lineIndex,
+                int waitTicks
+        ) {
+            this.activatingPlayerUuid = activatingPlayerUuid;
+            this.lineIndex = lineIndex;
+            this.waitTicks = waitTicks;
+        }
     }
 }
