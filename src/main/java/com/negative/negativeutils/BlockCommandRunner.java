@@ -95,7 +95,7 @@ final class BlockCommandRunner {
         );
     }
 
-    static void execute(
+    static void executeForInitiator(
             ServerLevel level,
             BlockPos blockPos,
             UUID initiatorUuid,
