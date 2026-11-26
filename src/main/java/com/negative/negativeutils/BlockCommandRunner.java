@@ -2,6 +2,7 @@ package com.negative.negativeutils;
 
 import com.mojang.logging.LogUtils;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.core.BlockPos;
@@ -88,7 +89,7 @@ final class BlockCommandRunner {
                 level,
                 blockPos,
                 player,
-                player == null ? "" : player.getGameProfile().getName(),
+                player == null ? null : player.getUUID(),
                 line,
                 lineNumber
         );
@@ -97,18 +98,18 @@ final class BlockCommandRunner {
     static void execute(
             ServerLevel level,
             BlockPos blockPos,
-            String initiatorName,
+            UUID initiatorUuid,
             String line,
             int lineNumber
     ) {
-        execute(level, blockPos, null, initiatorName, line, lineNumber);
+        execute(level, blockPos, null, initiatorUuid, line, lineNumber);
     }
 
     private static void execute(
             ServerLevel level,
             BlockPos blockPos,
             ServerPlayer player,
-            String initiatorName,
+            UUID initiatorUuid,
             String line,
             int lineNumber
     ) {
@@ -117,7 +118,7 @@ final class BlockCommandRunner {
             return;
         }
 
-        command = resolveCommunicatorSelector(command, initiatorName);
+        command = resolveCommunicatorSelector(command, initiatorUuid);
         if (command == null) {
             LOGGER.warn(
                     "Cannot resolve @w at command block {} line {}: no activating player was recorded.",
@@ -157,11 +158,11 @@ final class BlockCommandRunner {
 
     /**
      * @w is intentionally scoped to sequences started through the Comunicador.
-     * Resolve it to a name-filtered vanilla selector so it remains tied to the
+     * Resolve it to a UUID-filtered vanilla selector so it remains tied to the
      * original player even inside nested execute commands and after wait delays.
      * Quoted strings are left untouched, so literal text such as "@w" is safe.
      */
-    private static String resolveCommunicatorSelector(String command, String initiatorName) {
+    private static String resolveCommunicatorSelector(String command, UUID initiatorUuid) {
         StringBuilder resolved = new StringBuilder(command.length() + 24);
         boolean insideQuotes = false;
 
@@ -187,11 +188,18 @@ final class BlockCommandRunner {
                     && command.charAt(i + 1) == 'w'
                     && isSelectorStart(command, i)
                     && isSelectorEnd(command, i + 2)) {
-                if (initiatorName == null || !initiatorName.matches("[A-Za-z0-9_]{1,16}")) {
+                if (initiatorUuid == null) {
                     return null;
                 }
 
-                resolved.append("@a[name=").append(initiatorName);
+                long most = initiatorUuid.getMostSignificantBits();
+                long least = initiatorUuid.getLeastSignificantBits();
+                resolved.append("@a[nbt={UUID:[I;")
+                        .append((int) (most >>> 32)).append(',')
+                        .append((int) most).append(',')
+                        .append((int) (least >>> 32)).append(',')
+                        .append((int) least)
+                        .append("]}");
                 i += 2;
 
                 if (i < command.length() && command.charAt(i) == '[') {
