@@ -226,7 +226,7 @@ public class CommandSequenceBlockEntity extends BlockEntity {
         if (commands == null) {
             return "";
         }
-        String normalized = commands.replace("\\r\\n", "\\n").replace('\\r', '\\n');
+        String normalized = commands.replace("\r\n", "\n").replace('\r', '\n');
         return normalized.length() > MAX_COMMANDS_LENGTH
                 ? normalized.substring(0, MAX_COMMANDS_LENGTH)
                 : normalized;
