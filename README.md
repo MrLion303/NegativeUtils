@@ -259,6 +259,31 @@ El **Comunicador** es un botón físico que almacena y ejecuta una secuencia de 
 - Las secuencias se guardan en el mundo y se conservan al reiniciar el servidor.
 - Puedes usar comandos normales y `wait <segundos>` para introducir pausas entre ellos.
 
+### Bloqueo de perspectiva (F5)
+
+Permite impedir que un jugador cambie de perspectiva y mantenerlo en primera persona.
+
+Comandos:
+
+```text
+/negativeutils f5 disable
+/negativeutils f5 enable
+```
+
+También puedes indicar jugadores con un selector:
+
+```text
+/negativeutils f5 disable <jugadores>
+/negativeutils f5 enable <jugadores>
+```
+
+- **disable:** mantiene al jugador en primera persona. La tecla F5 no se bloquea ni se intercepta; si intenta cambiar la perspectiva, el mod la devuelve a primera persona.
+- **enable:** vuelve a permitir el cambio de perspectiva y coloca al jugador en primera persona al aplicar el cambio.
+- El estado se guarda por UUID en los datos del mundo y se restaura cuando el jugador vuelve a entrar.
+- Si VFXShaderMod está controlando una cámara de hombro o una cámara fija, NegativeUtils respeta temporalmente esa cámara. El bloqueo normal vuelve a aplicarse cuando VFXShaderMod devuelve el control al jugador.
+
+Los comandos requieren permisos de operador.
+
 ### Emotes de Discord
 
 NegativeUtils incluye un sistema para utilizar emotes de Discord dentro del chat de Minecraft.
